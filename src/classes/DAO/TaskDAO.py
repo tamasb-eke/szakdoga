@@ -1,0 +1,46 @@
+from sqlalchemy.orm import Session
+from sqlalchemy import insert
+from model.database import Task
+from scripts.safe_operation import safe_operation
+
+class TaskDAO:
+   
+    def __init__(self, session:Session):
+        self.session = session
+
+    @safe_operation(default_return={})
+    def get_all(self) -> dict:
+        """An SQL operation that returns all the data that is in the Task table in a list of dictionaries"""
+
+        q = self.session.query(Task).all()
+
+        return {
+            r.id : {
+                'name' : r.name,
+                'description' : r.description
+            } for r in q
+        } if q else {}
+
+    @safe_operation()
+    def insert(self, name:str, description:str) -> None:
+        """   
+        Insert into the Task table 
+            Values:
+                Name: Name of the task
+                Description: A short description for it
+        """
+        from scripts.logger.logger import get_logger
+        logger = get_logger(__name__)
+
+        data = (
+            insert(Task)
+            .values(
+                name=name,
+                description=description
+            )
+        )
+
+        self.session.execute(data)
+        self.session.commit()
+
+        logger.info(f"{name} was inserted into Task table")
