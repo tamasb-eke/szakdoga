@@ -38,6 +38,7 @@ class Run(Base):
     json_path = Column(Text, nullable=False, default="logs")
     date = Column(Text, nullable=False, default=datetime.today().strftime("%Y-%m-%d %H:%M"))
     successful = Column(Text, nullable=False, default="False")
+    log_path = Column(Text, default="logs\\")
 
 
 class Answer(Base):

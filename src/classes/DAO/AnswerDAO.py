@@ -95,4 +95,4 @@ class AnswerDAO:
         self.session.execute(data)
         self.session.commit()
 
-        logger.info(f"{chain} was inserted into Answers table   |    Validation:{validation_message}")
+        logger.info(f"{chain} was inserted into Answers table")

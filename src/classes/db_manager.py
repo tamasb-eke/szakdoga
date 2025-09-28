@@ -1,24 +1,27 @@
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import Session
-from pathlib import Path
 from model.database import Answer, Run, Human
 from .DAO.AnswerDAO import AnswerDAO
 from .DAO.llmDAO import LLMDAO
 from .DAO.TaskDAO import TaskDAO
 from .DAO.RunDAO import RunDAO
+from .DAO.HumanDAO import HumanDAO
 
 
 class Database:
    from scripts.safe_operation import safe_operation
 
-   def __init__(self, database_url:Path):
-      self.engine = create_engine(database_url)
+   def __init__(self):
+      from scripts.basic_tools import get_enviromental_variable
+      self.database_url = get_enviromental_variable('DATABASE_PATH')
+      self.engine = create_engine(self.database_url)
       self.session = Session(self.engine)
 
       self.llm = LLMDAO(self.session)
       self.answer = AnswerDAO(self.session)
       self.task = TaskDAO(self.session)
       self.run = RunDAO(self.session)
+      self.human = HumanDAO(self.session)
 
    def close(self):
       """Close the database session"""

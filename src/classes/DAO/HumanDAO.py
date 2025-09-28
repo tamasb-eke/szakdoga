@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, func, and_
+from sqlalchemy import insert, and_
 from model.database import Answer, Human, Run
 from scripts.safe_operation import safe_operation
+from model.variables import HumanColumn
 
 class HumanDAO:
    
@@ -45,8 +46,9 @@ class HumanDAO:
     def insert(self, human_id:str, games_played:int = 0) -> None:
         """   
         Insert into the Human table 
-            Values:
-                ID: The ID of the Human
+        
+        :param ID: The ID of the Human
+        :param games_played: The number of games the Human has played
         """
         from scripts.logger.logger import get_logger
         logger = get_logger(__name__)
@@ -86,3 +88,11 @@ class HumanDAO:
         if q:
             return True
         return False
+    
+    @safe_operation()
+    def get_(self, human_id: int, column: HumanColumn) -> str:
+        """Get a specific column value from a Run record by ID."""
+        
+        q = self.session.query(Human).filter(Human.id == human_id).first()
+
+        return getattr(q, column) if q else ""

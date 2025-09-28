@@ -49,16 +49,17 @@ class RunDAO:
         return query.scalar()
 
     @safe_operation()
-    def insert(self, llm_id:int, person_id:str, task_id:int, json_path:str, successful:str = False, date: str = datetime.today().strftime("%Y-%m-%d %H:%M")):
+    def insert(self, llm_id:int = 0, person_id:str = 'None', task_id:int = 1, json_path:str = 'logs', successful:str = 'False', date: str = datetime.today().strftime("%Y-%m-%d %H:%M"), log_path:str = 'logs\\'):
         """   
         Insert into the Run table 
             Values:
-                llm_id: LLM ID (If we will store person data this should be None)
-                person_id: Person ID (If we will store LLM data this should be None)
-                task_id: ID of the task we currently executing
-                json_path: Path to the .json that stores the results
-                successful: Was the running succesful
-                date: The date of the running. Format YYYY-MM-DD HH:MM
+                :param llm_id: LLM ID (If we will store person data this should be None)
+                :param person_id: Person ID (If we will store LLM data this should be None)
+                :param task_id: ID of the task we currently executing
+                :param json_path: Path to the .json that stores the results
+                :param successful: Was the running succesful
+                :param date: The date of the running. Format YYYY-MM-DD HH:MM
+                :param log_path: Path the the .log file
         Only the person_id or the llm_id should be an actual id, the other should be None
         """
         from scripts.logger.logger import get_logger
@@ -72,14 +73,15 @@ class RunDAO:
                 task_id=task_id,
                 json_path=json_path,
                 successful=successful,
-                date=date
+                date=date,
+                log_path=log_path
             )
         )
 
         self.session.execute(data)
         self.session.commit()
 
-        logger.info(f"New row was inserted into Run table")
+        logger.info(f"New row was inserted into Run table with id: {self.get_latest_id()}")
 
     @safe_operation()
     def update(self, run_id:int, value:str, json_path:bool = False) -> None:
@@ -104,12 +106,17 @@ class RunDAO:
 
         logger.info(f"{run_id} was updated with {value}")
 
+    @safe_operation(default_return=0)
+    def get_id(self, human_id:str) -> int:
+        """This is a little bit different, since it can be used the find an older run, based on the human_id"""
 
-    @safe_operation(default_return="")
-    def get_(self, run_id: int, column: RunColumn) -> str:
+        q = self.session.query(Run).filter(Run.person_id == human_id).first()
+        return q.person_id if q else 0
+
+    @safe_operation()
+    def get_(self, run_id: int, column: RunColumn):
         """Get a specific column value from a Run record by ID."""
         
-
         q = self.session.query(Run).filter(Run.id == run_id).first()
 
         return getattr(q, column) if q else ""

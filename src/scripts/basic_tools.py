@@ -16,4 +16,7 @@ def get_enviromental_variable(key:str) -> str:
         raise OSError(f"Missing required environment variable: {key} ")
     return env
 
+def clear_console():
+    os.system('clear')
+
  
