@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, func
-from model.database import Run, Answer
+from sqlalchemy import insert, func, delete, or_
+from model.database import Run, Answer, Human
 from scripts.safe_operation import safe_operation
 from datetime import datetime
 from model.variables import RunColumn
@@ -120,3 +120,32 @@ class RunDAO:
         q = self.session.query(Run).filter(Run.id == run_id).first()
 
         return getattr(q, column) if q else ""
+    
+    @safe_operation()
+    def delete_less_than(self, amount:int = 100) -> None:
+        """Delete those Runs where the human has less than the amount of games_played"""
+
+        subq = (
+            self.session.query(Run.id)
+            .join(Human, Human.id == Run.person_id)
+            .where(Human.games_played < amount)
+        )
+
+        self.session.execute(delete(Run).where(or_(Run.id.in_(subq), Run.successful == 'False')))
+        self.session.commit()
+
+
+    @safe_operation()
+    def delete(self, delete_id:str|list) -> None:
+        """An SQL query that deletes from Run table"""
+        from scripts.logger.logger import get_logger
+        logger = get_logger()
+
+        if isinstance(delete_id, str):
+            delete_id = [delete_id]
+
+        self.session.query(Run).filter(Run.id.in_(delete_id)).delete(synchronize_session='fetch')
+        self.session.commit()
+
+        for id_ in delete_id:
+            logger.info(f"{id_} was deleted from Run table")

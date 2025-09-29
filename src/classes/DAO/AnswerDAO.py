@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, func
-from model.database import Answer
+from sqlalchemy import insert, func, delete
+from model.database import Answer, Run
 from scripts.safe_operation import safe_operation
 from datetime import datetime
 
@@ -96,3 +96,32 @@ class AnswerDAO:
         self.session.commit()
 
         logger.info(f"{chain} was inserted into Answers table")
+
+    @safe_operation()
+    def delete_ownerless(self) -> None:
+        """Deletes those that has no llm_id or Human_id to it."""
+
+        subq = (
+            self.session.query(Answer.id)
+            .outerjoin(Run, Run.id == Answer.run_id)
+            .where(Run.person_id == None)  # use `is_()` if you want strict SQLAlchemy style
+        )
+
+        self.session.execute(delete(Answer).where(Answer.id.in_(subq)))
+        self.session.commit()
+
+
+    @safe_operation()
+    def delete(self, delete_id:str|list) -> None:
+        """An SQL query that deletes from Answer table"""
+        from scripts.logger.logger import get_logger
+        logger = get_logger()
+
+        if isinstance(delete_id, str):
+            delete_id = [delete_id]
+
+        self.session.query(Answer).filter(Answer.id.in_(delete_id)).delete(synchronize_session='fetch')
+        self.session.commit()
+
+        for id_ in delete_id:
+            logger.info(f"{id_} was deleted from Answer table")

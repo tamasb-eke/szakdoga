@@ -44,3 +44,18 @@ class TaskDAO:
         self.session.commit()
 
         logger.info(f"{name} was inserted into Task table")
+
+    @safe_operation()
+    def delete(self, delete_id:str|list) -> None:
+        """An SQL query that deletes from Task table"""
+        from scripts.logger.logger import get_logger
+        logger = get_logger()
+
+        if isinstance(delete_id, str):
+            delete_id = [delete_id]
+
+        self.session.query(Task).filter(Task.id.in_(delete_id)).delete(synchronize_session='fetch')
+        self.session.commit()
+
+        for id_ in delete_id:
+            logger.info(f"{id_} was deleted from Task table")

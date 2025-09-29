@@ -41,6 +41,10 @@ def load_from_initial_json_to_database() -> None:
                 if game['chain_length'] < 2:
                     continue
 
+                if db.human.already_answered(human_id=user_id, solution=game['chain']):
+                    logger.info(f"{user_id} already answered {game['chain']}")
+                    continue
+
                 if db.human.already_in_db(human_id=user_id): #in case if we ran into the same person again later in the file
                     run_id = db.run.get_id(user_id)
                     games_played = db.human.get_(human_id=user_id, column="games_played")
@@ -69,6 +73,25 @@ def load_from_initial_json_to_database() -> None:
                     run_id = run_id,
                     value = 'True'
                 )
+
+    clear_unesecarry()
+
+
+def clear_unesecarry():
+    """
+    A function that deletes all unnesecarry Answers, and Humans
+        if:
+            - Those Run's where the given human has not played a single game (from Run table)
+            - The Human games_played < 100 (from Human table)
+            - The answers where the answer has no llm_id, or human_id. Basically has no owner
+    
+    """
+    threshold = 100
+    db = get_database()
+    
+    db.run.delete_less_than(amount=threshold)   # 1
+    db.human.delete_less_than(amount=threshold) # 2
+    db.answer.delete_ownerless()                # 3
 
 @safe_operation()
 def convert_date(date:str) -> str:

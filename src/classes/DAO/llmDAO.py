@@ -51,7 +51,13 @@ class LLMDAO:
     
     @safe_operation()
     def insert(self, name:str, model:str, reasoning:str = "false"):
-        """"""
+        """
+        Insert into the LLM table
+        
+        :param name: Name of the LLM
+        :param model: The model of the LLM
+        :param reasoning: If it is capable of the reasoning
+        """
     
         from scripts.logger.logger import get_logger
         logger = get_logger(__name__)
@@ -69,3 +75,18 @@ class LLMDAO:
         self.session.commit()
 
         logger.info(f"{name} was inserted into LLM table with the following parameter: model={model} | resoning={reasoning}")
+
+    @safe_operation()
+    def delete(self, delete_id:str|list) -> None:
+        """An SQL query that deletes from LLM table"""
+        from scripts.logger.logger import get_logger
+        logger = get_logger()
+
+        if isinstance(delete_id, str):
+            delete_id = [delete_id]
+
+        self.session.query(LLM).filter(LLM.id.in_(delete_id)).delete(synchronize_session='fetch')
+        self.session.commit()
+
+        for id_ in delete_id:
+            logger.info(f"{id_} was deleted from LLM table")

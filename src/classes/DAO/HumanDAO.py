@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, and_
+from sqlalchemy import insert, and_, delete
 from model.database import Answer, Human, Run
 from scripts.safe_operation import safe_operation
 from model.variables import HumanColumn
@@ -89,6 +89,22 @@ class HumanDAO:
             return True
         return False
     
+    @safe_operation(default_return=False)
+    def already_answered(self, human_id:str, solution:str) -> bool:
+        """Returns with a bool value based on if a human is already answered a question"""
+
+        q = (
+            self.session.query(Human.id)
+            .join(Run, Run.person_id == Human.id)
+            .join(Answer, Answer.run_id == Run.id)
+            .where(and_(Human.id == human_id, Answer.chain == solution))
+            .first()
+        )
+
+        if q:
+            return True
+        return False
+    
     @safe_operation()
     def get_(self, human_id: int, column: HumanColumn) -> str:
         """Get a specific column value from a Run record by ID."""
@@ -96,3 +112,27 @@ class HumanDAO:
         q = self.session.query(Human).filter(Human.id == human_id).first()
 
         return getattr(q, column) if q else ""
+    
+    @safe_operation(default_return={})
+    def delete_less_than(self, amount:int=100) -> None:
+        """An SQL query that deletes from Human table those, that are less than the amount"""
+
+        self.session.execute(delete(Human).where(Human.games_played < amount))
+        self.session.commit()
+
+    
+
+    @safe_operation()
+    def delete(self, delete_id:str|list) -> None:
+        """An SQL query that deletes from Human table"""
+        from scripts.logger.logger import get_logger
+        logger = get_logger()
+
+        if isinstance(delete_id, str):
+            delete_id = [delete_id]
+
+        self.session.query(Human).filter(Human.id.in_(delete_id)).delete(synchronize_session='fetch')
+        self.session.commit()
+
+        for id_ in delete_id:
+            logger.info(f"{id_} was deleted from Human table")
