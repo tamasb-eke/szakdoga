@@ -19,8 +19,7 @@ def load_from_initial_json_to_database() -> None:
     db = get_database()
 
     if not json_path.exists():
-        logger.error(f"Path to word_navigation_game_export.json is invalid -> {json_path}")
-        return
+        raise FileNotFoundError(f"Path to word_navigation_game_export.json is invalid -> {json_path}")
     
     with open(json_path, 'r', encoding='utf-8') as file:
         data = json.load(file)['GameLogs']

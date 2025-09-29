@@ -4,8 +4,10 @@ from scripts.safe_operation import safe_operation
 from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parents[2]
+
 load_dotenv(ROOT/'config/.env')
 
+llm_messages = [{"role": "system", "content": "You are a helpful assistant."}]
 
 @safe_operation(exceptions=(OSError,ValueError))
 def get_enviromental_variable(key:str) -> str:
