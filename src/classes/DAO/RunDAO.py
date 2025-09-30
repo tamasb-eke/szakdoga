@@ -49,7 +49,7 @@ class RunDAO:
         return query.scalar()
 
     @safe_operation()
-    def insert(self, llm_id:int = 0, person_id:str = 'None', task_id:int = 1, json_path:str = 'logs', successful:str = 'False', date: str = datetime.today().strftime("%Y-%m-%d %H:%M"), log_path:str = 'logs\\'):
+    def insert(self, llm_id:int = 0, person_id:str = None, task_id:int = 1, json_path:str = 'logs', successful:str = 'False', date: str = datetime.today().strftime("%Y-%m-%d %H:%M"), log_path:str = 'logs\\'):
         """   
         Insert into the Run table 
             Values:

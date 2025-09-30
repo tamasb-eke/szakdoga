@@ -67,14 +67,14 @@ class AnswerDAO:
     def insert(self, run_id:int, chain: str, chain_length: int, sourceword: str, targetword:str, validation_message: str, date: str = datetime.today().strftime("%Y-%m-%d %H:%M")) -> None:
         """   
         Insert into the Answer table 
-            Values:
-                run_id: distinct id about the run
-                chain: The chain of the words
-                chain_length: Lenght of the chain
-                sourceword: The first word in the chain
-                targetword: The last word in the chain
-                date: By default it is the current. Format of YYYY-MM-DD HH:MM
-                validation: the validation message
+
+        :param run_id: distinct id about the run
+        :param chain: The chain of the words
+        :param chain_length: Lenght of the chain
+        :param sourceword: The first word in the chain
+        :param targetword: The last word in the chain
+        :param date: By default it is the current. Format of YYYY-MM-DD HH:MM
+        :param validation: the validation message
         """
         from scripts.logger.logger import get_logger
         logger = get_logger(__name__)

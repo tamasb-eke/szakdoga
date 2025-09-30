@@ -2,10 +2,14 @@ from openai import OpenAI
 from google import genai
 from google.genai import types
 import anthropic
-from scripts.basic_tools import llm_messages
 from scripts.safe_operation import safe_operation
+from pathlib import Path
+import json
+from datetime import datetime
 
 _chatbot_instance = None
+llm_messages = [{"role": "system", "content": "You are a helpful assistant."}]
+data_folder = Path("data/chatbot_results")
 
 class Chatbot:
 
@@ -15,6 +19,37 @@ class Chatbot:
         self.chatgpt = Openai(api_key=get_enviromental_variable("OPENAI_API_KEY"))
         self.claude = Anthropic(api_key=get_enviromental_variable("ANTHROPIC_API_KEY"))
         self.gemini = Google(api_key=get_enviromental_variable("GEMINI_API_KEY"))
+
+    def create_json_file(self, run_id: int) -> Path:
+        """Creates a path for a .json that will store the results of the llm conversation
+            
+        Filename Pattern:
+            <llm_name>_chat_history_<YYYY-MM-DD-HH-MM-SS>_<run_id>.json
+            Example: gpt4_chat_history_2025-05-05-20-30-00_123.json 
+        """
+        from classes.db_manager import get_database
+
+        db = get_database()
+        llm_name = db.llm.get_name(db.run.get_(run_id, "llm_id"))
+
+        timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        filename = f"{llm_name}_chat_history_{timestamp}_{run_id}.json"
+
+        relative_path = data_folder / filename
+        data_folder.mkdir(parents=True, exist_ok=True)
+
+        return relative_path
+
+
+    def save_json(self, data:list[dict], run_id:int):
+        """Save a Python object to a JSON file."""
+        from scripts.logger.logger import get_logger
+
+        logger = get_logger()
+        filepath = self.create_json_file(run_id=run_id)
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+        logger.info(f"llm_messages was saved successfully to {filepath}")
 
 
 

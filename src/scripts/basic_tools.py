@@ -2,12 +2,11 @@ from pathlib import Path
 import os
 from scripts.safe_operation import safe_operation
 from dotenv import load_dotenv
+import json
 
 ROOT = Path(__file__).resolve().parents[2]
 
 load_dotenv(ROOT/'config/.env')
-
-llm_messages = [{"role": "system", "content": "You are a helpful assistant."}]
 
 @safe_operation(exceptions=(OSError,ValueError))
 def get_enviromental_variable(key:str) -> str:
@@ -21,4 +20,10 @@ def get_enviromental_variable(key:str) -> str:
 def clear_console():
     os.system('clear')
 
- 
+@safe_operation(exceptions=FileExistsError)
+def load_data(path:Path):
+    """Load to json data"""
+
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    return data

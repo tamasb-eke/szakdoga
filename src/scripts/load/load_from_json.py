@@ -2,13 +2,14 @@ import json
 from pathlib import Path
 from scripts.logger.logger import get_logger, get_log_path
 from scripts.safe_operation import safe_operation
-from scripts.basic_tools import ROOT
+from scripts.basic_tools import ROOT, load_data
+from src.scripts.load.load_from_llm_other import llm_messages_loader
 from classes.db_manager import get_database
 from scripts.question_validation import semantic_validation
 from dateutil import parser, tz
 
 @safe_operation()
-def load_from_initial_json_to_database() -> None:
+def study_results_to_db() -> None:
     """
     This function is loading from the research result's 'word_navigation_game_export.json' file
     It is usefull if the database is corrupted or needs a reload
@@ -74,6 +75,39 @@ def load_from_initial_json_to_database() -> None:
                 )
 
     clear_unesecarry()
+
+@safe_operation()
+def chatbor_results_to_db(result_path:Path|str) -> None:
+    """Load the answers from an earlier chatbot results. The results are stored in data/chatbor_result folder"""
+    log_path = get_log_path()
+    db = get_database()
+
+    if isinstance(result_path, str):
+        result_path = Path(result_path)
+
+    data = load_data(result_path)
+    filename = result_path.name
+    run_id = filename.split('_')[-1]
+    date = filename.split('_')[-2]
+    llm_id = db.run.get_(run_id, "llm_id")
+    task_id = db.run.get_(run_id, "task_id")
+
+    db.run.insert(
+        llm_id = llm_id,
+        person_id = None,
+        task_id = task_id,
+        json_path = result_path,
+        log_path = log_path
+    )
+
+    run_id = db.run.get_latest_id()
+
+    llm_messages_loader(
+        llm_messages=data,
+        run_id=run_id,
+        date=date
+    )
+
 
 
 def clear_unesecarry():
