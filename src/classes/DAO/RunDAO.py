@@ -4,25 +4,41 @@ from model.database import Run, Answer, Human
 from scripts.safe_operation import safe_operation
 from datetime import datetime
 from model.variables import RunColumn
-
 class RunDAO:
    
     def __init__(self, session:Session):
         self.session = session
    
     @safe_operation()
-    def get_all(self) -> dict:
-        """An SQL query that return with all the data from Run table in a list of dictionaries"""
-        q = self.session.query(Run).all()
+    def get_all_(self, column: RunColumn = None, unique: bool = False) -> list|dict:
+        """
+        An SQL query that returns all data from Run table.
+
+        :param column: you can choose which column you want to get
+        :param unique: If it is set to True, then only return unique values
+        """
+        
+
+        if column:
+            query = self.session.query(getattr(Run, column))
+            
+            if unique:
+                query = query.distinct()
+                
+                result = query.all()
+                return [row[0] for row in result] if result else []
+        
+
+        q = self.session.query(Run).all()    
         
         return {
-            r.id : {
-                'llm_id' : r.llm_id,
+            r.id: {
+                'llm_id': r.llm_id,
                 'person_id': r.person_id,
-                'task_id' : r.task_id,
-                'json_path' : r.json_path,
-                'date' : r.date,
-                'successfull' : r.successful
+                'task_id': r.task_id,
+                'json_path': r.json_path,
+                'date': r.date,
+                'successful': r.successful
             } for r in q
         } if q else {}
     

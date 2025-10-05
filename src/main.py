@@ -1,5 +1,4 @@
-from scripts.load.load_from_json import study_results_to_db, chatbor_results_to_db
-from src.scripts.load.load_from_llm_other import llm_messages_loader
+from scripts.load.load import reload_older
 from classes.db_manager import get_database
 from scripts.load_enviroment import AUTHOR
 from classes.api import Chatbot
@@ -7,9 +6,6 @@ from classes.api import Chatbot
 db = get_database()
 chatbot = Chatbot()
 
-study_results_to_db()
-chatbor_results_to_db()
-llm_messages_loader()
 
 def assignment_selector() -> str:
     """
@@ -20,11 +16,10 @@ def assignment_selector() -> str:
 
     while True:
         print("\nPlease choose from the tasks below:")
-        print("1) Load human responses from study result .json to database")
-        print("2) Load earlier played chatbot's conversation result to database")
-        print("3) Load manually collected results from .json to database")
-        print("4) Play with chatbot")
-        print("5) Get results")
+        print("1) Reload older results to database")
+        print("2) Play with chatbot")
+        print("3) Get results")
+        print("4) Load older datas to database")
         print("e) Exit")
         task = input("Selected task: ")
 
@@ -36,25 +31,27 @@ def assignment_selector() -> str:
 
 def main():
     """Just the main function of the code that call's the assignment's function"""
-    
-    task_functions = {
-        '1': study_results_to_db,
-        '2': chatbor_results_to_db,
-        '3': ...,
-        '4': ...,
-        '5': ...,
-    }
-    
+    db = get_database()
     while True:
         task = assignment_selector()
         
-        if task == 'e':
-            break
-        
-        task_functions[task]()
+        match task:
+            case '1':
+                reload_older()
+            case '2':
+                ()
+            case '3':
+                ()
+            case '4':
+                ()
+            case '5':
+                ()
+            case 'e':
+                print("Exiting...")
+                db.close()
+                break
 
 
 
 if __name__ == '__main__':
     main()
-

@@ -8,7 +8,10 @@ import json
 from datetime import datetime
 
 _chatbot_instance = None
-llm_messages = [{"role": "system", "content": "You are a helpful assistant."}]
+llm_messages = [
+    {"date": datetime.now().strftime('%Y-%m-%d-%H-%M-%S')},
+    {"messages": [{"role": "system", "content": "You are a helpful assistant."}]}
+]
 data_folder = Path("data/chatbot_results")
 
 class Chatbot:
@@ -63,7 +66,7 @@ class Openai:
     def interact(self, message: str, model: str = "o1-pro", reasoning: bool = False) -> str:
         """A function that """
 
-        llm_messages.append({"role": "user", "content": message})
+        llm_messages[1]["messages"].append({"role": "Promt", "say": message})
 
         response = self.client.chat.completions.create(
             model=model,
@@ -72,7 +75,7 @@ class Openai:
         )
 
         reply = response.choices[0].message["content"]
-        llm_messages.append({"role": "assistant", "content": reply})
+        llm_messages[1]["messages"].append({"role": "Response", "say": reply})
 
         return reply
 
@@ -85,7 +88,7 @@ class Anthropic:
     @safe_operation(default_return="")
     def interact(self, message: str, model: str = "claude-3-opus-20240229", reasoning: bool = False) -> str:
 
-        llm_messages.append({"role": "user", "content": message})
+        llm_messages[1]["messages"].append({"role": "Prompt", "say": message})
 
         response = self.client.messages.create(
             model=model,
@@ -97,7 +100,7 @@ class Anthropic:
             } if reasoning else None,
         )
 
-        llm_messages.append({"role": "assistant", "content": response.content})
+        llm_messages[1]["messages"].append({"role": "Response", "say": response.content})
 
         return response.content
 
@@ -111,7 +114,7 @@ class Google:
     def interact(self, message: str, model: str = "gemini-2.5-flash", reasoning: bool = False) -> str:
         
 
-        llm_messages.append({"role": "user", "content": message})
+        llm_messages[1]["messages"].append({"role": "Prompt", "say": message})
         thinking_budget = 1024 if reasoning else 0
 
         response = self.client.models.generate_content(
@@ -122,7 +125,7 @@ class Google:
             ),
         )
 
-        llm_messages.append({"role": "assistant", "content": response.text})
+        llm_messages[1]["messages"].append({"role": "Response", "say": response.text})
 
         return response.text
 
