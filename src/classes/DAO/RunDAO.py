@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import insert, func, delete, or_
-from model.database import Run, Answer, Human
+from model.database import Run, Answer, Human, LLM, Task
 from scripts.safe_operation import safe_operation
 from datetime import datetime
 from model.variables import RunColumn
@@ -10,12 +10,13 @@ class RunDAO:
         self.session = session
    
     @safe_operation()
-    def get_all_(self, column: RunColumn = None, unique: bool = False) -> list|dict:
+    def get_all_(self, column: RunColumn = None, unique: bool = False, readable:bool = False) -> list|dict:
         """
         An SQL query that returns all data from Run table.
 
         :param column: you can choose which column you want to get
         :param unique: If it is set to True, then only return unique values
+        :param readable: If it is set to true then it will return in readable form. So with llm name, and task description. Not their id
         """
         
 
@@ -28,6 +29,14 @@ class RunDAO:
                 result = query.all()
                 return [row[0] for row in result] if result else []
         
+        elif readable:
+            q = (self.session.query(Run.id ,Run.date, LLM.name, LLM.model, LLM.reasoning, Task.name, Task.description, Run.json_path, Run.successful)
+                .select_from(Run)
+                .outerjoin(LLM, LLM.id == Run.llm_id)
+                .outerjoin(Task, Task.id == Run.task_id)
+                .all()
+            )
+            return [[r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]] for r in q] if q else []
 
         q = self.session.query(Run).all()    
         
@@ -65,7 +74,7 @@ class RunDAO:
         return query.scalar()
 
     @safe_operation()
-    def insert(self, llm_id:int = 0, person_id:str = None, task_id:int = 1, json_path:str = 'data/saved_conversation', successful:str = 'False', date: str = datetime.today().strftime("%Y-%m-%d %H:%M")):
+    def insert(self, llm_id:int=None, person_id:str = None, task_id:int = 1, json_path:str = 'data/saved_conversation', successful:str = 'False', date: str = datetime.today().strftime("%Y-%m-%d %H:%M")):
         """   
         Insert into the Run table 
             Values:

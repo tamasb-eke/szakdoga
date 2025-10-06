@@ -43,8 +43,7 @@ class Chatbot:
 
         return relative_path
 
-
-    def save_json(self, run_id:int, data:list[dict] = llm_messages):
+    def save_json(self, run_id:int, data:list[dict] = llm_messages, return_path:bool=False) -> None|Path:
         """Save a Python object to a JSON file."""
         from scripts.logger.logger import get_logger
 
@@ -54,6 +53,9 @@ class Chatbot:
             json.dump(data, f, indent=4, ensure_ascii=False)
         logger.info(f"llm_messages was saved successfully to {filepath}")
 
+        if return_path:
+            return filepath
+        return None
 
 
 class Openai:

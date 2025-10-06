@@ -1,12 +1,11 @@
 from scripts.load_enviroment import AUTHOR
+from scripts.logger.logger import get_logger
 from scripts.load.load import reload_older
+from scripts.load.load_results import select_result
 from classes.db_manager import get_database
 from scripts.basic_tools import clear_console
 from scripts.terminal.terminal import terminal
 from scripts.chatbot.chatbot_handler import start_conversation
-
-db = get_database()
-
 
 
 def assignment_selector() -> str:
@@ -41,14 +40,24 @@ def main():
         match task:
             case '1':
                 reload_older()
+                input("\nPress any key to continue")
+                clear_console()
             case '2':
                 start_conversation()
+                input("\nPress any key to continue")
+                clear_console()
             case '3':
-                ()
+                select_result()
+                input("\nPress any key to continue")
+                clear_console()
             case '4':
                 ()
+                input("\nPress any key to continue")
+                clear_console()
             case '5':
                 terminal()
+                input("\nPress any key to continue")
+                clear_console()
             case 'e':
                 print("Exiting...")
                 db.close()

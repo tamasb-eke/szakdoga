@@ -83,7 +83,7 @@ class Database:
          logger.info("\n\n")
          logger.info("*" * 50 + "ANSWERS" + "*" * 50)
          logger.info(f"Number of answers: {total_answers}  run id:{run_id}")
-         logger.info()
+         logger.info("\n")
 
          for key, value in distribution.items():
             percentage = (value / total_answers * 100) if total_answers else 0

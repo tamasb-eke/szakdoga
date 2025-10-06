@@ -41,6 +41,10 @@ def print_table(header_names: List[str], datas: List[List[Any]]) -> None:
     table = PrettyTable()
     table.field_names = header_names
     
+    if not datas:
+        print("There is no data to print out as a table")
+        return
+
     for row in datas:
         table.add_row(["" if val is None else val for val in row])
 
@@ -50,5 +54,6 @@ def print_table(header_names: List[str], datas: List[List[Any]]) -> None:
     table.header = True
     table.border = False
     table.preserve_internal_border = True
+    table.max_width = 25
 
     print(table)
