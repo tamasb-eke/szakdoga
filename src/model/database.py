@@ -32,13 +32,12 @@ class Run(Base):
     __tablename__ = "Run"
 
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
-    llm_id = Column(Integer, ForeignKey("LLM.id"), default=0)
-    person_id = Column(Text, ForeignKey("Human.id"), default="None")
-    task_id = Column(Integer, ForeignKey("Task.id"), default=0)
-    json_path = Column(Text, nullable=False, default="logs")
+    llm_id = Column(Integer, ForeignKey("LLM.id"))
+    person_id = Column(Text, ForeignKey("Human.id"))
+    task_id = Column(Integer, ForeignKey("Task.id"), default=1)
+    json_path = Column(Text, nullable=False, default="data/saved_conversation/")
     date = Column(Text, nullable=False, default=datetime.today().strftime("%Y-%m-%d %H:%M"))
     successful = Column(Text, nullable=False, default="False")
-    log_path = Column(Text, default="logs\\")
 
 
 class Answer(Base):

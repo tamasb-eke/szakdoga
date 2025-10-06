@@ -1,7 +1,7 @@
 from scripts.safe_operation import safe_operation
 from classes.db_manager import get_database
 from dateutil import parser, tz
-from scripts.basic_tools import ROOT
+from scripts.basic_tools import ROOT, clear_console
 from pathlib import Path
 
 def clear_unesecarry():
@@ -46,15 +46,19 @@ def get_manually_collected_json_path() -> Path:
     
     db = get_database()
     folder_paths = db.run.get_all_(column="json_path", unique=True)
-    
+    clear_console()
+
     for i, file in enumerate(folder_paths, start=1):
         print(f"{i}) {Path(file).name}")
+    print("e) Exit")
     
     while True:
         try:
-            choice = int(input("Please choose a number: "))
+            choice = input("Please choose a number: ")
+            if choice == 'e':
+                return 
             
-            if 1 <= choice <= len(folder_paths):
+            if 1 <= int(choice) <= len(folder_paths):
                 return Path(folder_paths[choice - 1])
             else:
                 print(f"Please enter a number between 1 and {len(folder_paths)}")

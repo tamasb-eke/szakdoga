@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 from scripts.question_validation import syntactic_validation, semantic_validation
-from scripts.logger.logger import get_logger, get_log_path
+from scripts.logger.logger import get_logger
 from scripts.safe_operation import safe_operation
 from scripts.basic_tools import ROOT, load_data, clear_console
 from classes.db_manager import get_database
@@ -52,7 +52,7 @@ def study_results_to_db() -> None:
     """
     
     logger = get_logger(__name__)
-    json_path = Path(ROOT/'data/game_guides/word_navigation_game_export.json')
+    json_path = Path(ROOT/'data/other_data_files/word_navigation_game_export.json')
     db = get_database()
 
     if not json_path.exists():
@@ -69,7 +69,6 @@ def study_results_to_db() -> None:
                 person_id = user_id,
                 task_id = 2,
                 json_path = str(json_path),
-                log_path = str(get_log_path())
             )
             run_id = db.run.get_latest_id()
             
@@ -121,8 +120,9 @@ def older_results_to_db(result_path:Path|str) -> None:
 
     IMPORTANT: It is usefull for chatbot conversation. If you want to save manually collected results, please use: manually_collected_to_db()
     """
-    
-    log_path = get_log_path()
+    if not result_path:
+        return
+
     db = get_database()
 
     if isinstance(result_path, str):
@@ -144,7 +144,6 @@ def older_results_to_db(result_path:Path|str) -> None:
         person_id = None,
         task_id = task_id,
         json_path = result_path,
-        log_path = log_path
     )
 
     run_id = db.run.get_latest_id()
@@ -160,11 +159,12 @@ def reload_older():
     """A function that calls the human result loader or the older result loader"""
 
     choosable_tasks = {'1', '2', 'e'}
-    clear_console()
+    
 
     while True:
+        clear_console()
         print("There is two kind of reload you can do. First is reload the results of the human study from .json. " \
-        "The other one is reloading already saved (.json) results")
+        "The Second one is reloading already saved (.json) results\n")
         print("1) Reload human study result")
         print("2) Reload saved game results")
         print("e) Exit")

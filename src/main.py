@@ -2,6 +2,7 @@ from scripts.load.load import reload_older
 from classes.db_manager import get_database
 from scripts.load_enviroment import AUTHOR
 from classes.api import Chatbot
+from scripts.basic_tools import clear_console
 
 db = get_database()
 chatbot = Chatbot()
@@ -13,7 +14,7 @@ def assignment_selector() -> str:
     """
 
     choosable_tasks = {'1', '2', '3', '4','e'}
-
+    clear_console()
     while True:
         print("\nPlease choose from the tasks below:")
         print("1) Reload older results to database")

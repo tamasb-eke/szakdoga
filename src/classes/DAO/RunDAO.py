@@ -65,7 +65,7 @@ class RunDAO:
         return query.scalar()
 
     @safe_operation()
-    def insert(self, llm_id:int = 0, person_id:str = None, task_id:int = 1, json_path:str = 'logs', successful:str = 'False', date: str = datetime.today().strftime("%Y-%m-%d %H:%M"), log_path:str = 'logs\\'):
+    def insert(self, llm_id:int = 0, person_id:str = None, task_id:int = 1, json_path:str = 'logs', successful:str = 'False', date: str = datetime.today().strftime("%Y-%m-%d %H:%M")):
         """   
         Insert into the Run table 
             Values:
@@ -75,7 +75,6 @@ class RunDAO:
                 :param json_path: Path to the .json that stores the results
                 :param successful: Was the running succesful
                 :param date: The date of the running. Format YYYY-MM-DD HH:MM
-                :param log_path: Path the the .log file
         Only the person_id or the llm_id should be an actual id, the other should be None
         """
         from scripts.logger.logger import get_logger
@@ -90,7 +89,7 @@ class RunDAO:
                 json_path=json_path,
                 successful=successful,
                 date=date,
-                log_path=log_path
+
             )
         )
 
