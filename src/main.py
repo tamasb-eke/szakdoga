@@ -1,6 +1,6 @@
+from scripts.load_enviroment import AUTHOR
 from scripts.load.load import reload_older
 from classes.db_manager import get_database
-from scripts.load_enviroment import AUTHOR
 from scripts.basic_tools import clear_console
 from scripts.terminal.terminal import terminal
 from scripts.chatbot.chatbot_handler import start_conversation
@@ -21,7 +21,7 @@ def assignment_selector() -> str:
         print("1) Reload older results to database")
         print("2) Play with chatbot")
         print("3) Get results")
-        print("4) Load older datas to database")
+        print("4) Load manually collected data to database")
         print("5) Terminal")
         print("e) Exit")
         task = input("Selected task: ")
