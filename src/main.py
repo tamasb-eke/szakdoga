@@ -1,11 +1,12 @@
 from scripts.load.load import reload_older
 from classes.db_manager import get_database
 from scripts.load_enviroment import AUTHOR
-from classes.api import Chatbot
 from scripts.basic_tools import clear_console
+from scripts.terminal.terminal import terminal
+from scripts.chatbot.chatbot_handler import start_conversation
 
 db = get_database()
-chatbot = Chatbot()
+
 
 
 def assignment_selector() -> str:
@@ -21,6 +22,7 @@ def assignment_selector() -> str:
         print("2) Play with chatbot")
         print("3) Get results")
         print("4) Load older datas to database")
+        print("5) Terminal")
         print("e) Exit")
         task = input("Selected task: ")
 
@@ -40,18 +42,17 @@ def main():
             case '1':
                 reload_older()
             case '2':
-                ()
+                start_conversation()
             case '3':
                 ()
             case '4':
                 ()
             case '5':
-                ()
+                terminal()
             case 'e':
                 print("Exiting...")
                 db.close()
                 break
-
 
 
 if __name__ == '__main__':

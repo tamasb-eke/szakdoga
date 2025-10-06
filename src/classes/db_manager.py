@@ -28,17 +28,13 @@ class Database:
       self.session.close()
 
    @safe_operation(default_return=[])
-   def create_questions(self, human_id:str) -> list[dict]:
+   def create_questions(self, amount:int = 100) -> list[dict]:
       """
       Creates a question that was not been asked based on a person_id
-      
-      :param human_id: The ID of the human you want to get a questions
       """
       q = (
          self.session.query(Answer)
-         .join(Run, Run.id == Answer.run_id)
-         .join(Human, Human.id == Run.person_id)
-         .where(Human.id == human_id)
+         .limit(amount)
          .all()
       )
 

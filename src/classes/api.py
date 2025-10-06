@@ -44,7 +44,7 @@ class Chatbot:
         return relative_path
 
 
-    def save_json(self, data:list[dict], run_id:int):
+    def save_json(self, run_id:int, data:list[dict] = llm_messages):
         """Save a Python object to a JSON file."""
         from scripts.logger.logger import get_logger
 
@@ -64,7 +64,7 @@ class Openai:
         
     @safe_operation(default_return="")
     def interact(self, message: str, model: str = "o1-pro", reasoning: bool = False) -> str:
-        """A function that """
+        """A function that makes the callig, and getting the answer from the LLM"""
 
         llm_messages[1]["messages"].append({"role": "Promt", "say": message})
 
@@ -87,7 +87,8 @@ class Anthropic:
 
     @safe_operation(default_return="")
     def interact(self, message: str, model: str = "claude-3-opus-20240229", reasoning: bool = False) -> str:
-
+        """A function that makes the callig, and getting the answer from the LLM"""
+        
         llm_messages[1]["messages"].append({"role": "Prompt", "say": message})
 
         response = self.client.messages.create(
@@ -112,7 +113,7 @@ class Google:
 
     @safe_operation(default_return="")
     def interact(self, message: str, model: str = "gemini-2.5-flash", reasoning: bool = False) -> str:
-        
+        """A function that makes the callig, and getting the answer from the LLM"""
 
         llm_messages[1]["messages"].append({"role": "Prompt", "say": message})
         thinking_budget = 1024 if reasoning else 0

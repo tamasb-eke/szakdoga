@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import insert
 from model.database import LLM
 from scripts.safe_operation import safe_operation
+from model.variables import LLMColumn
 
 
 class LLMDAO:
@@ -90,3 +91,12 @@ class LLMDAO:
 
         for id_ in delete_id:
             logger.info(f"{id_} was deleted from LLM table")
+
+
+    @safe_operation()
+    def get_(self, llm_id: int, column: LLMColumn):
+        """Get a specific column value from a LLM record by ID."""
+        
+        q = self.session.query(LLM).filter(LLM.id == llm_id).first()
+
+        return getattr(q, column) if q else ""
