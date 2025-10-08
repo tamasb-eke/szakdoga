@@ -8,6 +8,7 @@ from typing import List, Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
+SAVED_CONVERSATION_PATH = 'data/saved_conversation'
 
 load_dotenv(ROOT/'config/.env')
 

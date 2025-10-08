@@ -1,7 +1,7 @@
 from scripts.load_enviroment import AUTHOR
 from scripts.logger.logger import get_logger
-from scripts.load.load import reload_older
-from scripts.load.load_results import select_result
+from scripts.load.load import reload_older, load_manual_datas
+from scripts.load.load_helper import select_result
 from classes.db_manager import get_database
 from scripts.basic_tools import clear_console
 from scripts.terminal.terminal import terminal
@@ -51,7 +51,7 @@ def main():
                 input("\nPress any key to continue")
                 clear_console()
             case '4':
-                ()
+                load_manual_datas()
                 input("\nPress any key to continue")
                 clear_console()
             case '5':

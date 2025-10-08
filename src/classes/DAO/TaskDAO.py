@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import insert
 from model.database import Task
 from scripts.safe_operation import safe_operation
+from model.variables import TaskColumn
 
 class TaskDAO:
    
@@ -59,3 +60,11 @@ class TaskDAO:
 
         for id_ in delete_id:
             logger.info(f"{id_} was deleted from Task table")
+
+    @safe_operation()
+    def get_(self, task_id: int, column: TaskColumn):
+        """Get a specific column value from a Task record by ID."""
+        
+        q = self.session.query(Task).filter(Task.id == task_id).first()
+
+        return getattr(q, column) if q else ""

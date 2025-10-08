@@ -4,9 +4,33 @@ from datetime import datetime
 from scripts.question_validation import syntactic_validation, semantic_validation
 from scripts.logger.logger import get_logger
 from scripts.safe_operation import safe_operation
-from scripts.basic_tools import ROOT, load_data, clear_console
+from scripts.basic_tools import ROOT, load_data, clear_console, SAVED_CONVERSATION_PATH
 from classes.db_manager import get_database
-from scripts.load.load_helper import convert_date, clear_unesecarry, get_manually_collected_json_path
+from scripts.load.load_helper import (
+    convert_date, 
+    clear_unesecarry, 
+    get_manually_collected_json_path,
+    get_json_file_from_user, 
+    get_llm_id_from_user, 
+    get_task_id_from_user
+)
+
+@safe_operation()
+def load_json_to_db(file_path:Path, run_id:int, date:str) -> None:
+    """
+    This is just a very small function that can be used as a modul, where around it you can create any kind of 
+    file_path processing, run_id creation, or date customization.
+
+    :param file_path: Path to the .json that holds the datas
+    :param run_id: The ID of the run you want to insert
+    :param date: The date of the file
+    """
+    data = load_data(file_path)
+    llm_messages_loader(
+        llm_messages=data,
+        run_id=run_id,
+        date=date
+    )
 
 
 @safe_operation()
@@ -29,7 +53,7 @@ def llm_messages_loader(llm_messages:list[dict], run_id:int = None, date:str = d
     for content in (item["say"] for item in llm_messages if item["role"] == "Response"):
 
         if not syntactic_validation(content):
-            logger.error(f"Incorrect syntactic for wordchain: {content}") #can happen because llm gives not just answers
+            logger.warning(f"Incorrect syntactic for wordchain: {content}") #can happen because llm gives not just answers
             continue
 
         validation_message = semantic_validation(content)
@@ -104,10 +128,7 @@ def study_results_to_db() -> None:
                     games_played = games_played
                 )
 
-                db.run.update(
-                    run_id = run_id,
-                    value = 'True'
-                )
+                db.run.update(run_id = run_id, value = 'True')
 
     clear_unesecarry()
 
@@ -131,8 +152,6 @@ def older_results_to_db(result_path:Path|str) -> None:
     if not result_path.exists():    
         raise FileNotFoundError(f"The given path: {result_path} was ")
 
-
-    data = load_data(result_path)
     filename = result_path.name
     run_id = filename.split('_')[-1]
     date = filename.split('_')[-2]
@@ -148,11 +167,57 @@ def older_results_to_db(result_path:Path|str) -> None:
 
     run_id = db.run.get_latest_id()
 
-    llm_messages_loader(
-        llm_messages=data,
+    load_json_to_db(file_path=result_path, run_id=run_id, date=date)
+
+    db.run.update(run_id=run_id, value='True')
+
+@safe_operation()
+def load_manual_datas():
+    """
+    This function helps the user decide which .json should be saved. The saved json's are in 'data/saved_conversation'. 
+    Also the .json filename has to be a structure like this:
+
+    Filename Pattern:
+        'llm_name'_chat_history_'YYYY-MM-DD-HH-MM'_'run_id'.json
+        Example: gpt4_chat_history_2025-05-05-20-30_123.json 
+
+    Run_id will be generated automatically, and the file will be renamed according to it
+    """
+    db = get_database()
+    directory = Path(SAVED_CONVERSATION_PATH)
+    if not directory.exists():
+        raise NotADirectoryError(f"The {SAVED_CONVERSATION_PATH} folder does not exists!")
+
+    clear_console()
+    filepath = directory / get_json_file_from_user(directory)
+    if not filepath.exists():
+        return
+    llm_id = get_llm_id_from_user()
+    if not llm_id:
+        return
+    task_id = get_task_id_from_user()
+    if not task_id:
+        return
+
+    db.run.insert(
+        llm_id=llm_id,
+        task_id=task_id,
+        json_path=filepath
+    )
+    run_id = db.run.get_latest_id()
+
+    date = datetime.now().strftime("%Y-%m-%d-%H-%M")
+    new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}"
+    filepath.rename(new_filename)
+    db.run.update(run_id=run_id, value=new_filename, json_path=True)
+
+    load_json_to_db(
+        file_path=filepath,
         run_id=run_id,
         date=date
     )
+
+    db.run.update(run_id=run_id, value='True')
 
 
 def reload_older():

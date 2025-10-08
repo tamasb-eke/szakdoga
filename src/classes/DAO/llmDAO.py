@@ -11,8 +11,22 @@ class LLMDAO:
         self.session = session
 
     @safe_operation(default_return={})
-    def get_all(self) -> dict:
-        """SQL funtion that return all data from LLM table in a dictionary"""
+    def get_all_(self, column: LLMColumn = None, unique: bool = False) -> dict|list:
+        """
+        SQL funtion that return all data from LLM table in a dictionary
+        
+        :param column: Only return all the data from the selected column
+        :param unique: Only return unique datas from the selected column
+        """
+
+        if column:
+            query = self.session.query(getattr(LLM, column))
+            if unique:
+                query = query.distinct()
+                result = query.all()
+                return [row[0] for row in result] if result else []
+            
+            return query.all() if query else []
 
         q = self.session.query(LLM).all()
 

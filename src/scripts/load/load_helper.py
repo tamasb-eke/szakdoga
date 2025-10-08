@@ -3,6 +3,7 @@ from classes.db_manager import get_database
 from dateutil import parser, tz
 from scripts.basic_tools import ROOT, clear_console
 from pathlib import Path
+from scripts.basic_tools import print_table
 
 def clear_unesecarry():
     """
@@ -64,3 +65,112 @@ def get_manually_collected_json_path() -> Path:
                 print(f"Please enter a number between 1 and {len(folder_paths)}")
         except ValueError:
             print("Please enter a valid number")
+
+def get_llm_id_from_user() -> int:
+    """This function is getting a llm id from the user input"""
+
+    db = get_database()
+    llm = db.llm.get_all_()
+    datas = [[r[0],r[1]['name'], r[1]['model'], r[1]['reasoning']] for r in llm.items()]
+    while True:
+        print(f"\nPlease also give a LLM ID")
+        print("You can exit using 'e'")
+        print("\n           Currently in the database")
+        print_table(
+            header_names=['ID', 'Name', 'Model', 'Reasoning'],
+            datas=datas
+        )
+
+        llm_id = input("\nPlease choose a LLM ID: ")
+        if llm_id == 'e':
+            return
+        elif db.llm.get_(llm_id=int(llm_id), column='id') == "":
+            clear_console()
+            print(f"\nThe given LLM ID ({llm_id}) was not recognisable. Please choose another one.\n")
+            continue
+
+        return llm_id
+    
+
+def get_json_file_from_user(directory_path:Path) -> Path:
+    """This function is getting a json path from the user input"""
+
+    datas = [[i, filename.name] for i, filename in enumerate(directory_path.glob('*.json'), start=1)]
+
+    while True:
+        print(f"You can load any .json that has not been yet exported and it is stored at {directory_path}")
+        print("You can exit using 'e'")
+        print("\n           Currently in the folder")
+        print_table(
+            header_names=['Number', 'Filename'],
+            datas=datas
+        )
+
+        number = input("\nPlease give the corresponding number for the file: ")
+        if number == 'e':
+            return 'None'
+        
+        elif int(number) <= len(datas):
+            clear_console()
+            print(f"\nThe given number ({number}) was not recognisable. Please choose another one.\n")
+            continue
+        
+        return Path(datas[number][1])
+    
+def get_task_id_from_user() -> int:
+    """This function is getting a task id from the user input"""
+
+    db = get_database()
+    llm = db.task.get_all()
+    datas = [[r[0],r[1]['name'], r[1]['description']] for r in llm.items()]
+    while True:
+        print(f"\nPlease give a Task ID")
+        print("You can exit using 'e'")
+        print("\n           Currently in the database")
+        print_table(
+            header_names=['ID', 'Name', 'Description'],
+            datas=datas
+        )
+
+        task_id = input("\nPlease choose a Task ID: ")
+        if task_id == 'e':
+            return
+        elif db.task.get_(task_id=int(task_id), column='id') == "":
+            clear_console()
+            print(f"\nThe given Task ID ({task_id}) was not recognisable. Please choose another one.\n")
+            continue
+
+        return task_id
+    
+@safe_operation()
+def select_result():
+    """This function helps to choose the user which older run should be evaluated"""
+
+    db = get_database()
+    datas = db.run.get_all_(readable=True)
+    clear_console()
+
+    while True:
+        
+        print("You can evaluate any loaded data that is in the database")
+        print("You can exit using 'e'")
+        print("\n           Currently available in database")
+        print_table(
+            header_names=['Run ID','Date', 'LLM name', 'LLM model', 'LLM reasoning', 'Task name', 'Task description', 'Json path', 'Successfull'],
+            datas=datas
+        )
+
+        run_id = input("\nPlease give Run ID: ")
+        if run_id == 'e':
+            return
+        elif db.run.get_(run_id=int(run_id), column='id') == "":
+            clear_console()
+            print(f"\nThe given Run ID ({run_id}) was not recognisable. Please choose another one.\n")
+            continue
+
+        else:
+            break
+    
+    clear_console()
+    
+    db.evaluation(run_id=run_id)

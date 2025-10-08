@@ -27,15 +27,15 @@ class Chatbot:
         """Creates a path for a .json that will store the results of the llm conversation
             
         Filename Pattern:
-            <llm_name>_chat_history_<YYYY-MM-DD-HH-MM-SS>_<run_id>.json
-            Example: gpt4_chat_history_2025-05-05-20-30-00_123.json 
+            'llm_name'_chat_history_'YYYY-MM-DD-HH-MM-SS'_'run_id'.json
+            Example: gpt4_chat_history_2025-05-05-20-30_123.json 
         """
         from classes.db_manager import get_database
 
         db = get_database()
         llm_name = db.llm.get_name(db.run.get_(run_id, "llm_id"))
 
-        timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M')
         filename = f"{llm_name}_chat_history_{timestamp}_{run_id}.json"
 
         relative_path = data_folder / filename

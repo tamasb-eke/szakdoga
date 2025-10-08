@@ -12,7 +12,7 @@ def initialize_chatbot_communication():
 
     db = get_database()
 
-    llms = db.llm.get_all()
+    llms = db.llm.get_all_()
     tasks = db.task.get_all()
 
     llm = [[r[0],r[1]['name'], r[1]['model'], r[1]['reasoning']] for r in llms.items()]    

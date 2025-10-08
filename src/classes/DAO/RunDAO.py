@@ -28,7 +28,10 @@ class RunDAO:
                 
                 result = query.all()
                 return [row[0] for row in result] if result else []
-        
+
+            return query.all() if query else []
+            
+
         elif readable:
             q = (self.session.query(Run.id ,Run.date, LLM.name, LLM.model, LLM.reasoning, Task.name, Task.description, Run.json_path, Run.successful)
                 .select_from(Run)
@@ -112,6 +115,7 @@ class RunDAO:
         """
         Updates the successful column. Value stores the new value of the successful, based on the run_id
         
+        :param run_id: The id of the run you want to update
         :param value: The new value for successful or json_path
         :param json_path: If it is set to True, then the value will be the new json_path, else the new successful status
         """
