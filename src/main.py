@@ -13,7 +13,7 @@ def assignment_selector() -> str:
     A user can choose between different tasks. The function returns with the number of the selected item
     """
 
-    choosable_tasks = {'1', '2', '3', '4','e'}
+    choosable_tasks = {'1', '2', '3', '4', '5', 'e'}
     clear_console()
     while True:
         print("\nPlease choose from the tasks below:")
@@ -28,6 +28,7 @@ def assignment_selector() -> str:
         if task in choosable_tasks:
             return task
         else:
+            clear_console()
             print("\nThe given number was not recognisable. Please choose another one.\n")
 
 
@@ -55,11 +56,10 @@ def main():
                 input("\nPress any key to continue")
                 clear_console()
             case '5':
+                clear_console()
                 terminal()
-                input("\nPress any key to continue")
                 clear_console()
             case 'e':
-                print("Exiting...")
                 db.close()
                 break
 

@@ -9,6 +9,8 @@ from typing import List, Any
 
 ROOT = Path(__file__).resolve().parents[2]
 SAVED_CONVERSATION_PATH = 'data/saved_conversation'
+GMPL_PATH = 'data/other_data_files/word_morph_network.gml'
+VALID_WORDS_PATH = Path(ROOT/'data/game_guides/valid_three_letter_words.txt')
 
 load_dotenv(ROOT/'config/.env')
 

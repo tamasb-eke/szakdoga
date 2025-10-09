@@ -1,7 +1,7 @@
 import re
 import networkx as nx
 from pathlib import Path
-from scripts.basic_tools import ROOT
+from scripts.basic_tools import GMPL_PATH, VALID_WORDS_PATH
 
 cache = None
 #----------------------------- SYNTACTIC VALIDATION FUNCTIONS ---------------------------------------
@@ -49,11 +49,10 @@ def repeting_words(word_chain:str) -> bool:
 def in_3_letter_scrabble_words(word_chain:str, cache) -> bool:
     """Checks if the word is valid, meaning can be found in the valid 3 letter list from scrabble"""
 
-    filename = Path(ROOT/'data/game_guides/valid_three_letter_words.txt')
     words = word_chain.split('-')
 
     if cache == None:
-        with open(filename, 'r') as file:
+        with open(VALID_WORDS_PATH, 'r') as file:
             cache = [line.strip().lower() for line in file]
 
     for word in words:
@@ -119,17 +118,12 @@ def semantic_validation(data: str) -> str:
 
 #----------------------------- GRAPH SHORTEST PATH FUNCTIONS ---------------------------------------
 
-def load_graph_from_gml(gml_path):
-    """
-    Load a graph from a GML file.
-    """
-    return nx.read_gml(gml_path, label="name")
 
-def find_shortest_word_path(gml_path, word1, word2):
+def find_shortest_word_path(word1:str, word2:str):
     """
     Find the shortest path between two 3-letter words in the GML graph.
     """
-    G = load_graph_from_gml(gml_path)
+    G = nx.read_gml(GMPL_PATH, label="name")
     
     if word1 not in G:
         raise ValueError(f"Word '{word1}' not found in the graph.")
@@ -140,4 +134,4 @@ def find_shortest_word_path(gml_path, word1, word2):
         path = nx.shortest_path(G, source=word1, target=word2)
         return path, len(path)
     except nx.NetworkXNoPath:
-        return None  # or raise an exception if you prefer
+        return None 
