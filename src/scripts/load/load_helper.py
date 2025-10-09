@@ -4,6 +4,7 @@ from dateutil import parser, tz
 from scripts.basic_tools import ROOT, clear_console
 from pathlib import Path
 from scripts.basic_tools import print_table
+from scripts.visualize.viz import visualizer
 
 def clear_unesecarry():
     """
@@ -142,6 +143,22 @@ def get_task_id_from_user() -> int:
 
         return task_id
     
+def get_minimal_frequences():
+    """"""
+    while True:
+        print(f"\nPlease provide a number for minimal frequences.")
+        print("You can exit using 'e'")
+
+        frequences = input("\nMinimal frequences: ")
+        if frequences == 'e':
+            return
+        elif frequences.isdigit():
+            return int(frequences)
+        else:
+            clear_console()
+            print(f"The given parameter ({frequences}) is not a positive number. Please try again")
+
+
 @safe_operation()
 def select_result():
     """This function helps to choose the user which older run should be evaluated"""
@@ -174,3 +191,9 @@ def select_result():
     clear_console()
     
     db.evaluation(run_id=run_id)
+
+    print("\n\nDo you want to visualize the results? (y) Yes (n) No")
+    visualize = input("Y\N: ").lower()
+    if visualize in ['y', 'yes']:
+        clear_console()
+        visualizer(run_id=run_id)

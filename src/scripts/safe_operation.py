@@ -23,6 +23,7 @@ def safe_operation(default_return: Any = None, exceptions: Union[Type[Exception]
                from scripts.logger.logger import get_logger
                logger = get_logger(__name__)
                logger.error(error_msg)
-            return default_return
+            if default_return:
+               return default_return
       return wrapper
    return decorator

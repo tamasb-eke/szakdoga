@@ -1,16 +1,19 @@
 import logging
 from logging import Logger
-from pathlib import Path
-from datetime import datetime
-from scripts.basic_tools import ROOT
 
-_current_log_path: Path | None = None  
+import logging
 
-def get_logger(name: str = __name__) -> Logger:
-    """Returns a logger with the specified name"""
-    if not logging.getLogger().hasHandlers():
-        setup_logging()
-    return logging.getLogger(name)
+class LevelBasedFormatter(logging.Formatter):
+    def __init__(self):
+        super().__init__()
+        self.detailed_fmt = logging.Formatter('%(levelname)s - %(filename)s - %(message)s')
+        self.simple_fmt = logging.Formatter('%(message)s')
+    
+    def format(self, record):
+        if record.levelno >= logging.WARNING:
+            return self.detailed_fmt.format(record)
+        else:
+            return self.simple_fmt.format(record)
 
 
 def setup_logging(default_level: int = logging.INFO) -> None:
@@ -18,14 +21,21 @@ def setup_logging(default_level: int = logging.INFO) -> None:
 
     root_logger = logging.getLogger()
     if root_logger.hasHandlers():
-        return  # already configured
+        return
     
     root_logger.setLevel(logging.DEBUG)
 
     # --- console handler ---
     ch = logging.StreamHandler()
     ch.setLevel(default_level)
-    ch.setFormatter(logging.Formatter('%(message)s'))
+    ch.setFormatter(LevelBasedFormatter())
     root_logger.addHandler(ch)
 
-    root_logger.info(f"Starting new logging session at")
+    root_logger.info(f"Starting new logging session")
+ 
+
+def get_logger(name: str = __name__) -> Logger:
+    """Returns a logger with the specified name"""
+    if not logging.getLogger().hasHandlers():
+        setup_logging()
+    return logging.getLogger(name)

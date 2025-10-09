@@ -15,7 +15,11 @@ class AnswerDAO:
         Return with all the answers based on a run_id in a list of dictionary
         
         :param run_id: the id of the run that you are interested in. Can be found in the Run table
-        :param correct: If it is set to True, then only return the ones that are valid
+        :param only_correct: If it is set to True, then only return the ones that are valid
+        :param repeting: If it is set to True, then only return the ones that have the repeting word error
+        :param invalid_word: If it is set to True, then only return the ones that have the invalid_word error
+        :param not_adjacency: If it is set to True, then only return the ones that have not adjenctive word pair
+        :param all_invalid: If it is set to True, then return all the results that are not correct
         """
         error_types = [
             "Repeting words",

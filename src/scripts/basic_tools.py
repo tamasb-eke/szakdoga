@@ -8,9 +8,10 @@ from typing import List, Any
 
 
 ROOT = Path(__file__).resolve().parents[2]
-SAVED_CONVERSATION_PATH = 'data/saved_conversation'
-GMPL_PATH = 'data/other_data_files/word_morph_network.gml'
+SAVED_CONVERSATION_PATH = Path(ROOT/'data/saved_conversation')
+GMPL_PATH = Path(ROOT/'data/other_data_files/word_morph_network.gml')
 VALID_WORDS_PATH = Path(ROOT/'data/game_guides/valid_three_letter_words.txt')
+SAVE_PICTURE_PATH = 'data/exported_pictures'
 
 load_dotenv(ROOT/'config/.env')
 
