@@ -1,10 +1,11 @@
 from scripts.safe_operation import safe_operation
 from classes.db_manager import get_database
 from dateutil import parser, tz
-from scripts.basic_tools import ROOT, clear_console
+from scripts.basic_tools import clear_console
 from pathlib import Path
 from scripts.basic_tools import print_table
 from scripts.visualize.viz import visualizer
+from .export import export_to_scv
 
 def clear_unesecarry():
     """
@@ -192,8 +193,15 @@ def select_result():
     
     db.evaluation(run_id=run_id)
 
+    print("\n\nDo you want to save the results to a .csv? (y) Yes (n) No")
+    export = input("Y/N: ").lower()
+    if export in ['y', 'yes']:
+        clear_console()
+        export_to_scv(run_id=int(run_id))
+    
+    
     print("\n\nDo you want to visualize the results? (y) Yes (n) No")
-    visualize = input("Y\N: ").lower()
+    visualize = input("Y/N: ").lower()
     if visualize in ['y', 'yes']:
         clear_console()
-        visualizer(run_id=run_id)
+        visualizer(run_id=int(run_id))
