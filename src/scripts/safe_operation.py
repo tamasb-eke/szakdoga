@@ -11,7 +11,9 @@ def safe_operation(default_return: Any = None, exceptions: Union[Type[Exception]
       exceptions: Exception type(s) to catch (default: Exception)
       log_error: Whether to log error (default: True)
    """
-
+   from scripts.logger.logger import get_logger
+   logger = get_logger(__name__)
+   
    def decorator(func: Callable) -> Callable:
       @functools.wraps(func)
       def wrapper(*args, **kwargs):
@@ -20,8 +22,6 @@ def safe_operation(default_return: Any = None, exceptions: Union[Type[Exception]
          except exceptions as e:
             error_msg = f"Error in {func.__name__}: {e}"
             if log_error:
-               from scripts.logger.logger import get_logger
-               logger = get_logger(__name__)
                logger.error(error_msg)
             if default_return:
                return default_return

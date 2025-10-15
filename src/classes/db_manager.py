@@ -80,16 +80,18 @@ class Database:
          distribution = self.answer.get_all_error(run_id)
          total_answers = self.run.get_number_of_questions(run_id)
 
-         logger.info("\n\n")
-         logger.info("*" * 50 + "ANSWERS" + "*" * 50)
-         logger.info(f"Number of answers: {total_answers}  run id:{run_id}")
-         logger.info("\n")
+         print("\n\n")
+         print("*" * 50 + "ANSWERS" + "*" * 50)
+         print(f"Number of answers: {total_answers}  run id:{run_id}")
+         print("\n")
 
          for key, value in distribution.items():
             percentage = (value / total_answers * 100) if total_answers else 0
-            logger.info(f"{key}:{' ' * (50 - len(key))}{value} ({percentage:.1f}%)")
+            print(f"{key}:{' ' * (50 - len(key))}{value} ({percentage:.1f}%)")
          
       else:
+         from scripts.logger.logger import get_logger
+         logger = get_logger(__name__)
          logger.error(f"The running was unsuccessful: {run_id}")
 
 

@@ -68,7 +68,7 @@ def to_db_from_txt(file_path:Path, run_id:int) -> None:
                 )
                 inserted += 1
 
-        logger.info(f"Loaded {inserted} out of {len(f.readlines())} words from {file_path}")
+        logger.info(f"Loaded {inserted} line of words from {file_path}")
 
 @safe_operation()
 def llm_messages_loader(llm_messages:list[dict], run_id:int = None, date:str = datetime.now().strftime('%Y%m%d_%H%M%S')):
@@ -251,9 +251,9 @@ def load_manual_datas_json():
         date=date
     )
 
-    new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}"
-    filepath.rename(SAVED_CONVERSATION_PATH / f"{new_filename}.json")
-    db.run.update(run_id=run_id, value=new_filename, json_path=True)
+    new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}.json"
+    filepath.rename(SAVED_CONVERSATION_PATH / new_filename)
+    db.run.update(run_id=run_id, value=(SAVED_CONVERSATION_PATH / new_filename), json_path=True)
 
     db.run.update(run_id=run_id, value='True')
 
@@ -327,8 +327,8 @@ def load_manual_datas_txt():
     )
 
     date = datetime.now().strftime("%Y-%m-%d-%H-%M")
-    new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}"
-    filepath.rename(SAVED_CONVERSATION_PATH / f"{new_filename}.txt")
-    db.run.update(run_id=run_id, value=new_filename, json_path=True)
+    new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}.txt"
+    filepath.rename(SAVED_CONVERSATION_PATH / new_filename)
+    db.run.update(run_id=run_id, value=(SAVED_CONVERSATION_PATH / new_filename), json_path=True)
 
     db.run.update(run_id=run_id, value='True')
