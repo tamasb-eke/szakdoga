@@ -1,13 +1,11 @@
-You are given the following task. I will give you two English words each with 3 letters. 
-Your task is to move from one word (which I give you first) to the other by changing only one letter of the original word at a time. 
+Imagine the following situation. You work for a big puzzle company and your boss gives you the following task. 
+You have to create 1000 puzzles. The rules of the assignment are as follows: 
+    The player is given two 3-letter English words. A start word and a finish word. The game is very simple. 
+    The player has to get from the start word to the target word by changing one letter at each step, and by getting an existing, meaningful English word. 
 
-So if I give you fit and cat, your starting word is fit and your target word is cat. 
-You have to give back the answer in the form of a solo string. e.g. a good solution is "fit-fat-cat". 
-You don't need to give any other text or characters in response.
 
-Be careful that the intermediate words can only be 3-letter existing English words. 
-Each element in the word string can only differ from its two neighbors by one letter. Also note that when you give an answer, 
-you must enter the string of words you have found as follows: sourceword-secondword-......-destinationword
+Let's look at an example. The start word: FIT, and the target word: CAR. Then a possible solution is FIT-FAT-CAT 
 
-This is a clever word association game I'd love to play with you. If you don't understand the exercise, 
-feel free to ask. If everything is clear, please respond with "I understand the game"
+
+Now it's your turn. Make 1000 of these puzzles and give me the solution to each one. 
+Please when you give me the puzzles and their answer don't give any other word, just the ones that need for the puzzles and their solve. 

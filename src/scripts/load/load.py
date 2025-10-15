@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 from datetime import datetime
 from scripts.question_validation import syntactic_validation, semantic_validation
@@ -10,10 +11,23 @@ from scripts.load.load_helper import (
     convert_date, 
     clear_unesecarry, 
     get_manually_collected_json_path,
-    get_json_file_from_user, 
+    get_file_from_user, 
     get_llm_id_from_user, 
     get_task_id_from_user
 )
+
+
+def extract_word_chain(string: str) -> str | None:
+    """
+    Extracts the wordchain. It is usefull for .txt loading
+    Returns the first match found, or None if no such pattern exists.
+    """
+
+    pattern = r'\b(?:[A-Za-z]+-)+[A-Za-z]+\b'
+    
+    match = re.search(pattern, string)
+    return match.group(0) if match else None
+
 
 @safe_operation()
 def load_json_to_db(file_path:Path, run_id:int, date:str) -> None:
@@ -32,6 +46,29 @@ def load_json_to_db(file_path:Path, run_id:int, date:str) -> None:
         date=date
     )
 
+@safe_operation()
+def to_db_from_txt(file_path:Path, run_id:int) -> None:
+    """This function loads the datas into the database from a .txt"""
+    
+    logger = get_logger()
+    db = get_database()
+    inserted = 0
+
+    with open(file_path, 'r') as f:
+        for line in f:
+            word_chain = extract_word_chain(line.strip())
+            if word_chain:
+                db.answer.insert(
+                    run_id=run_id,
+                    chain=word_chain,
+                    chain_length=len(word_chain.split('-')),
+                    sourceword=word_chain.split('-')[0],
+                    targetword=word_chain.split('-')[-1],
+                    validation_message=semantic_validation(word_chain),
+                )
+                inserted += 1
+
+        logger.info(f"Loaded {inserted} out of {len(f.readlines())} words from {file_path}")
 
 @safe_operation()
 def llm_messages_loader(llm_messages:list[dict], run_id:int = None, date:str = datetime.now().strftime('%Y%m%d_%H%M%S')):
@@ -172,7 +209,7 @@ def older_results_to_db(result_path:Path|str) -> None:
     db.run.update(run_id=run_id, value='True')
 
 @safe_operation()
-def load_manual_datas():
+def load_manual_datas_json():
     """
     This function helps the user decide which .json should be saved. The saved json's are in 'data/saved_conversation'. 
     Also the .json filename has to be a structure like this:
@@ -189,7 +226,7 @@ def load_manual_datas():
         raise NotADirectoryError(f"The {SAVED_CONVERSATION_PATH} folder does not exists!")
 
     clear_console()
-    filepath = directory / get_json_file_from_user(directory)
+    filepath = directory / get_file_from_user(directory)
     if not filepath.exists():
         return
     llm_id = get_llm_id_from_user()
@@ -202,20 +239,21 @@ def load_manual_datas():
     db.run.insert(
         llm_id=llm_id,
         task_id=task_id,
-        json_path=filepath
+        json_path=str(filepath)
     )
     run_id = db.run.get_latest_id()
 
     date = datetime.now().strftime("%Y-%m-%d-%H-%M")
-    new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}"
-    filepath.rename(new_filename)
-    db.run.update(run_id=run_id, value=new_filename, json_path=True)
 
     load_json_to_db(
         file_path=filepath,
         run_id=run_id,
         date=date
     )
+
+    new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}"
+    filepath.rename(SAVED_CONVERSATION_PATH / f"{new_filename}.json")
+    db.run.update(run_id=run_id, value=new_filename, json_path=True)
 
     db.run.update(run_id=run_id, value='True')
 
@@ -246,3 +284,51 @@ def reload_older():
                     older_results_to_db(result_path=get_manually_collected_json_path())
                 case 'e':
                     break
+
+
+@safe_operation()
+def load_manual_datas_txt():
+    """
+    This function helps the user decide which .txt should be saved. The saved txt's are in 'data/saved_conversation'. 
+    Also the .txt filename has to be a structure like this:
+
+    Filename Pattern:
+        'llm_name'_chat_history_'YYYY-MM-DD-HH-MM'_'run_id'.json
+        Example: gpt4_chat_history_2025-05-05-20-30_123.json 
+
+    Run_id will be generated automatically, and the file will be renamed according to it
+    """
+    db = get_database()
+    directory = Path(SAVED_CONVERSATION_PATH)
+    if not directory.exists():
+        raise NotADirectoryError(f"The {SAVED_CONVERSATION_PATH} folder does not exists!")
+
+    clear_console()
+    filepath = directory / get_file_from_user(directory, extension='.txt')
+    if not filepath.exists():
+        return
+    llm_id = get_llm_id_from_user()
+    if not llm_id:
+        return
+    task_id = get_task_id_from_user()
+    if not task_id:
+        return
+
+    db.run.insert(
+        llm_id=llm_id,
+        task_id=task_id,
+        json_path=str(filepath)
+    )
+    run_id = db.run.get_latest_id()
+
+    to_db_from_txt(
+        file_path=filepath,
+        run_id=run_id,
+    )
+
+    date = datetime.now().strftime("%Y-%m-%d-%H-%M")
+    new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}"
+    filepath.rename(SAVED_CONVERSATION_PATH / f"{new_filename}.txt")
+    db.run.update(run_id=run_id, value=new_filename, json_path=True)
+
+    db.run.update(run_id=run_id, value='True')

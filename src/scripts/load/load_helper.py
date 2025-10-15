@@ -62,7 +62,7 @@ def get_manually_collected_json_path() -> Path:
                 return 
             
             if 1 <= int(choice) <= len(folder_paths):
-                return Path(folder_paths[choice - 1])
+                return Path(folder_paths[int(choice) - 1])
             else:
                 print(f"Please enter a number between 1 and {len(folder_paths)}")
         except ValueError:
@@ -91,16 +91,16 @@ def get_llm_id_from_user() -> int:
             print(f"\nThe given LLM ID ({llm_id}) was not recognisable. Please choose another one.\n")
             continue
 
-        return llm_id
+        return int(llm_id)
     
 
-def get_json_file_from_user(directory_path:Path) -> Path:
+def get_file_from_user(directory_path:Path, extension:str='.json') -> Path:
     """This function is getting a json path from the user input"""
 
-    datas = [[i, filename.name] for i, filename in enumerate(directory_path.glob('*.json'), start=1)]
+    datas = [[i, filename.name] for i, filename in enumerate(directory_path.glob(f'*{extension}'), start=1)]
 
     while True:
-        print(f"You can load any .json that has not been yet exported and it is stored at {directory_path}")
+        print(f"You can load any file that has not been yet exported and it is stored at {directory_path}")
         print("You can exit using 'e'")
         print("\n           Currently in the folder")
         print_table(
@@ -113,11 +113,11 @@ def get_json_file_from_user(directory_path:Path) -> Path:
             return 'None'
         
         elif int(number) <= len(datas):
-            clear_console()
-            print(f"\nThe given number ({number}) was not recognisable. Please choose another one.\n")
-            continue
+            return Path(datas[int(number)-1][1])
         
-        return Path(datas[number][1])
+        clear_console()
+        print(f"\nThe given number ({number}) was not recognisable. Please choose another one.\n")
+        continue
     
 def get_task_id_from_user() -> int:
     """This function is getting a task id from the user input"""
@@ -142,10 +142,10 @@ def get_task_id_from_user() -> int:
             print(f"\nThe given Task ID ({task_id}) was not recognisable. Please choose another one.\n")
             continue
 
-        return task_id
+        return int(task_id)
     
 def get_minimal_frequences():
-    """"""
+    """Get the minimal frequences parameter from the user input"""
     while True:
         print(f"\nPlease provide a number for minimal frequences.")
         print("You can exit using 'e'")
@@ -205,3 +205,5 @@ def select_result():
     if visualize in ['y', 'yes']:
         clear_console()
         visualizer(run_id=int(run_id))
+
+
