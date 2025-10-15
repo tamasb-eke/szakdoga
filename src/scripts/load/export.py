@@ -18,6 +18,7 @@ def export_to_scv(run_id:int) -> None:
     logger = get_logger()
     db = get_database()
     answers = db.answer.get_all(run_id=run_id, only_correct=True)
+    print(f"Exporting to {run_id}.csv ....")
 
     outputfilepath = SAVE_CSV_PATH / f"{run_id}_output.csv"
     if outputfilepath.exists():

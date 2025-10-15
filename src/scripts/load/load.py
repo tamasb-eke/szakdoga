@@ -252,8 +252,9 @@ def load_manual_datas_json():
     )
 
     new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}.json"
-    filepath.rename(SAVED_CONVERSATION_PATH / new_filename)
-    db.run.update(run_id=run_id, value=(SAVED_CONVERSATION_PATH / new_filename), json_path=True)
+    new_file_path = SAVED_CONVERSATION_PATH / new_filename
+    filepath.rename(new_file_path)
+    db.run.update(run_id=run_id, value=str(new_file_path), json_path=True)
 
     db.run.update(run_id=run_id, value='True')
 
@@ -328,7 +329,8 @@ def load_manual_datas_txt():
 
     date = datetime.now().strftime("%Y-%m-%d-%H-%M")
     new_filename = f"{db.llm.get_(llm_id=llm_id, column='name')}_chat_history_{date}_{run_id}.txt"
-    filepath.rename(SAVED_CONVERSATION_PATH / new_filename)
-    db.run.update(run_id=run_id, value=(SAVED_CONVERSATION_PATH / new_filename), json_path=True)
+    new_file_path = SAVED_CONVERSATION_PATH / new_filename
+    filepath.rename(new_file_path)
+    db.run.update(run_id=run_id, value=str(new_file_path), json_path=True)
 
     db.run.update(run_id=run_id, value='True')

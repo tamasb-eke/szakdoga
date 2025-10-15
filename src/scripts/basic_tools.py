@@ -59,6 +59,6 @@ def print_table(header_names: List[str], datas: List[List[Any]]) -> None:
     table.header = True
     table.border = False
     table.preserve_internal_border = True
-    table.max_width = 25
+    table.max_width = 20
 
     print(table)
