@@ -174,7 +174,7 @@ def select_result():
         print("You can exit using 'e'")
         print("\n           Currently available in database")
         print_table(
-            header_names=['Run ID','Date', 'LLM name', 'LLM model', 'LLM reasoning', 'Task name', 'Task description', 'Json path', 'Successfull'],
+            header_names=['Run ID', 'Date', 'LLM name', 'LLM model', 'Task name', 'Successfull'],
             datas=datas
         )
 

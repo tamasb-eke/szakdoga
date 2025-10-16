@@ -33,13 +33,13 @@ class RunDAO:
             
 
         elif readable:
-            q = (self.session.query(Run.id ,Run.date, LLM.name, LLM.model, LLM.reasoning, Task.name, Task.description, Run.json_path, Run.successful)
+            q = (self.session.query(Run.id, Run.date, LLM.name, LLM.model, Task.name, Run.successful)
                 .select_from(Run)
                 .outerjoin(LLM, LLM.id == Run.llm_id)
                 .outerjoin(Task, Task.id == Run.task_id)
                 .all()
             )
-            return [[r[0], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8]] for r in q] if q else []
+            return [[r[0], r[1], r[2], r[3], r[4], r[5]] for r in q] if q else []
 
         q = self.session.query(Run).all()    
         
