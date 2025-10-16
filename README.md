@@ -24,14 +24,14 @@ This work was produced during the course of a diploma thesis in electrical engin
    ```
 
 4. Running:
-    4.1. If you want to use the development enviroment (for testing):
-   ```bash
-   APP_ENV=dev ./venv/bin/python ./src/main.py
-   ```
-   4.2. If you want to use the production enviroment:
-   ```bash
-   APP_ENV=prod ./venv/bin/python ./src/main.py
-   ```
+  - If you want to use the development enviroment (for testing):
+    ```bash
+    APP_ENV=dev ./venv/bin/python ./src/main.py
+    ```
+  - If you want to use the production enviroment:
+    ```bash
+    APP_ENV=prod ./venv/bin/python ./src/main.py
+    ```
 
 ## Project structure
 You can see in the example files, how should the .env files look.
