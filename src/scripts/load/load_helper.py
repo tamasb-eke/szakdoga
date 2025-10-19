@@ -4,8 +4,7 @@ from dateutil import parser, tz
 from scripts.basic_tools import clear_console
 from pathlib import Path
 from scripts.basic_tools import print_table
-from scripts.visualize.viz import visualizer
-from .export import export_to_scv
+from scripts.question_validation import semantic_validation
 
 def clear_unesecarry():
     """
@@ -187,23 +186,24 @@ def select_result():
             continue
 
         else:
-            break
+            return int(run_id)
     
     clear_console()
     
-    db.evaluation(run_id=run_id)
 
-    print("\n\nDo you want to save the results to a .csv? (y) Yes (n) No")
-    export = input("Y/N: ").lower()
-    if export in ['y', 'yes']:
-        clear_console()
-        export_to_scv(run_id=int(run_id))
-    
-    
-    print("\n\nDo you want to visualize the results? (y) Yes (n) No")
-    visualize = input("Y/N: ").lower()
-    if visualize in ['y', 'yes']:
-        clear_console()
-        visualizer(run_id=int(run_id))
+@safe_operation()
+def re_evaluate_validation(run_id:int):
+    """This function get's a run_id, and then re-evaluate it's answers"""
 
+    db = get_database()
+    answers = db.answer.get_all(run_id=run_id)
+
+    for answer in answers:
+        validation = semantic_validation(answer['chain'].replace(' ','-'))
+        if validation != answer['validation']:
+            db.answer.update(
+                answer_id = answer['id'],
+                column = 'validation',
+                new_value = validation
+            )
 

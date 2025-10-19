@@ -1,7 +1,6 @@
 from scripts.load_enviroment import AUTHOR
 from scripts.logger.logger import get_logger
-from scripts.load.load import reload_older, load_manual_datas_json, load_manual_datas_txt
-from scripts.load.load_helper import select_result
+from scripts.load.load import reload_older, load_manual_datas_json, load_manual_datas_txt, evaluate_results, re_evaluate_results
 from classes.db_manager import get_database
 from scripts.basic_tools import clear_console
 from scripts.terminal.terminal import terminal
@@ -13,16 +12,17 @@ def assignment_selector() -> str:
     A user can choose between different tasks. The function returns with the number of the selected item
     """
 
-    choosable_tasks = {'1', '2', '3', '4', '5', '6', 'e'}
+    choosable_tasks = {'1', '2', '3', '4', '5', '6', '7', 'e'}
     clear_console()
     while True:
         print("\nPlease choose from the tasks below:")
         print("1) Reload older results to database")
         print("2) Play with chatbot")
         print("3) Get results")
-        print("4) Load manually collected data to database (.json)")
-        print("5) Load manually collected data to database (.txt)")
-        print("6) Terminal")
+        print("4) Re evaluate older results")
+        print("5) Load manually collected data to database (.json)")
+        print("6) Load manually collected data to database (.txt)")
+        print("7) Terminal")
         print("e) Exit")
         task = input("Selected task: ")
 
@@ -49,18 +49,22 @@ def main():
                 input("\nPress any key to continue")
                 clear_console()
             case '3':
-                select_result()
+                evaluate_results()
                 input("\nPress any key to continue")
                 clear_console()
             case '4':
-                load_manual_datas_json()
+                re_evaluate_results()
                 input("\nPress any key to continue")
                 clear_console()
             case '5':
-                load_manual_datas_txt()
+                load_manual_datas_json()
                 input("\nPress any key to continue")
                 clear_console()
             case '6':
+                load_manual_datas_txt()
+                input("\nPress any key to continue")
+                clear_console()
+            case '7':
                 clear_console()
                 terminal()
                 clear_console()

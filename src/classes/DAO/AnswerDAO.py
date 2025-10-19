@@ -3,6 +3,7 @@ from sqlalchemy import insert, func, delete
 from model.database import Answer, Run
 from scripts.safe_operation import safe_operation
 from datetime import datetime
+from model.variables import AnswerColumn
 
 class AnswerDAO:
    
@@ -10,7 +11,16 @@ class AnswerDAO:
         self.session = session
 
     @safe_operation(default_return=[])
-    def get_all(self, run_id:int, only_correct:bool = False, repeting:bool = False, invalid_word:bool = False, not_adjacency:bool = False, all_invalid:bool = False) -> list[dict]:
+    def get_all(
+            self, 
+            run_id:int, 
+            only_correct:bool = False, 
+            repeting:bool = False, 
+            invalid_word:bool = False, 
+            not_adjacency:bool = False,
+            too_short:bool = False, 
+            all_invalid:bool = False
+        ) -> list[dict]:
         """
         Return with all the answers based on a run_id in a list of dictionary
         
@@ -24,7 +34,8 @@ class AnswerDAO:
         error_types = [
             "Repeting words",
             "Not in the acceptable .txt list",
-            "Not neighbours"
+            "Not neighbours",
+            "Too short chain length"
         ]
 
         q = (
@@ -34,22 +45,27 @@ class AnswerDAO:
 
         if only_correct:
             q = q.filter(Answer.validation == "True")
+        if all_invalid:
+            q = q.filter(Answer.validation.in_(error_types))
         elif repeting:
-            q = q.filter(Answer.validation == error_types[0]).all()
+            q = q.filter(Answer.validation == error_types[0])
         elif invalid_word:
-            q = q.filter(Answer.validation == error_types[1]).all()
+            q = q.filter(Answer.validation == error_types[1])
         elif not_adjacency:
-            q = q.filter(Answer.validation == error_types[2]).all()
-        elif all_invalid:
-            q = q.filter(Answer.validation.in_(error_types)).all()
+            q = q.filter(Answer.validation == error_types[2])
+        elif too_short:
+            q = q.filter(Answer.validation == error_types[3])
+        
 
-
+        q = q.all()
         return [
             {
+                'id' : r.id,
                 'chain': r.chain,
                 'chain_length': r.chain_length,
                 'sourceWord': r.sourceWord,
                 'targetWord': r.targetWord,
+                'validation' : r.validation
             } for r in q
         ] if q else []
     
@@ -129,3 +145,25 @@ class AnswerDAO:
 
         for id_ in delete_id:
             logger.info(f"{id_} was deleted from Answer table")
+
+    @safe_operation()
+    def get_(self, answer_id:int, column:AnswerColumn) -> str:
+        """Get a specific column value from a Answer record by ID."""
+        
+        q = self.session.query(Answer).filter(Answer.id == answer_id).first()
+
+        return getattr(q, column) if q else ""
+    
+    @safe_operation()
+    def update(self, answer_id, column:AnswerColumn, new_value:str) -> None:
+        """This function is updates a field in answers based on it's ID"""
+        from scripts.logger.logger import get_logger
+        logger = get_logger()
+
+        q = self.session.query(Answer).filter(Answer.id == answer_id).first()
+
+        if column == 'validation':
+            q.validation = new_value
+
+        self.session.commit()
+        logger.info(f"With the ID {answer_id} in Answers table, the {column} column was updated with: {new_value}")

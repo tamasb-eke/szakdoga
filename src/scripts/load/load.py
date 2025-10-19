@@ -7,15 +7,9 @@ from scripts.logger.logger import get_logger
 from scripts.safe_operation import safe_operation
 from scripts.basic_tools import ROOT, load_data, clear_console, SAVED_CONVERSATION_PATH
 from classes.db_manager import get_database
-from scripts.load.load_helper import (
-    convert_date, 
-    clear_unesecarry, 
-    get_manually_collected_json_path,
-    get_file_from_user, 
-    get_llm_id_from_user, 
-    get_task_id_from_user
-)
-
+from scripts.load.load_helper import *
+from scripts.visualize.viz import visualizer
+from .export import export_to_scv
 
 def extract_word_chain(string: str) -> str | None:
     """
@@ -334,3 +328,32 @@ def load_manual_datas_txt():
     db.run.update(run_id=run_id, value=str(new_file_path), json_path=True)
 
     db.run.update(run_id=run_id, value='True')
+
+def evaluate_results():
+    """This function print out validation to output"""
+
+    db = get_database()
+    run_id = select_result()
+
+    db.evaluation(run_id=run_id)
+
+    print("\n\nDo you want to save the results to a .csv? (y) Yes (n) No")
+    export = input("Y/N: ").lower()
+    if export in ['y', 'yes']:
+        clear_console()
+        export_to_scv(run_id=int(run_id))
+    
+    
+    print("\n\nDo you want to visualize the results? (y) Yes (n) No")
+    visualize = input("Y/N: ").lower()
+    if visualize in ['y', 'yes']:
+        clear_console()
+        visualizer(run_id=int(run_id))
+
+def re_evaluate_results():
+    """This function re evaluate results for a given run and then print out validation to output"""
+
+    db = get_database()
+    run_id = select_result()
+    re_evaluate_validation(run_id=run_id)
+    db.evaluation(run_id=run_id)

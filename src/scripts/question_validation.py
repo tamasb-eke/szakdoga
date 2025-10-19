@@ -104,6 +104,9 @@ def semantic_validation(data: str) -> str:
 
     global cache
 
+    if len(data.split('-')) <= 2:
+        return "Too short chain length"
+
     if repeting_words(data):
         return "Repeting words"
     
