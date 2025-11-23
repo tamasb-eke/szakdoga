@@ -23,12 +23,12 @@ This work was produced during the course of a diploma thesis in electrical engin
    pip install -r requirements.txt
    ```
 
-4. Get your API keys:
+4. Get your API keys:  
    If you want to use the Chatbot part of the code, you need to get API 
    key for LLM communication. Please be aware that API usage is usually 
    subject to payment.
    Your API key should be placed into a .env file. (There is an example
-   .env file you can use)
+   .env file in config_example)
 
 5. Running:
   - If you want to use the development enviroment (for testing):
