@@ -1,0 +1,24 @@
+1.	You are given the following task. I will give you two English words each with 3 letters. 
+Your task is to move from one word (which I give you first) to the other by changing only one letter of the original word at a time. 
+
+So if I give you fit and cat, your source word is fit and your target word is cat. 
+You have to give back the answer in the form of a solo string. e.g. a good solution is "fit-fat-cat". 
+You don't need to give any other text or characters in response.
+Below are some good solutions with examples:
+source: LUX, target: KOS, wordchain: LUX-LAX-LAS-KAS-KOS
+source: FIG, target: VAT, wordchain: FIG-FAG-FAT-VAT
+source: SOX, target: WAT, wordchain: SOX-SAX-SAT-WAT
+
+Below I explain some of the things you should look out for during the game:
+Be careful that the intermediate words can only be 3-letter existing English words, only Scrabble-accepted 3-letter English words can be used in the solo dance.
+Each element in the word string can only differ from its two neighbors by one letter. 
+Also note that when you give an answer, you must enter the string of words you have found as follows: sourceword-secondword-......-destinationword
+
+I would like to draw your attention to two typical mistakes. The first is that there is repetition in the words in the wordchain. 
+An example of this is DAH-DAA-DAG-DAG-ALT (as you can see, this one contains the word DAG twice, which is not good). 
+The other typical error that can occur is that, although the rule explicitly asks for it, the answer contains non-adjacent words. 
+As a reminder, a chain of adjacent words should be returned as an event. Two words are adjacent if they differ by a single letter. 
+An example of such a wrong answer is WIZ-WET-HET-HAT (here WIZ and WET are non-adjacent words because they differ in two letters)
+
+This is a clever word association game I'd love to play with you. If you don't understand the exercise, feel free to ask. 
+If everything is clear, please respond with "I understand the game"
