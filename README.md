@@ -32,6 +32,10 @@ or use wsl (Windows Subsystem for Linux) alternatively
    Your API key should be placed into a .env file. (There is an example
    .env file in config_example)
 
+   Google: https://aistudio.google.com/
+   Claude: https://console.anthropic.com
+   ChatGPT: https://platform.openai.com/
+
 5. Running:
   - If you want to use the development enviroment (for testing):
     ```bash
