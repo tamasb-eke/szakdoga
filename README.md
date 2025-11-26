@@ -5,6 +5,8 @@ This repository contains the code base for the thesis. The following description
 This work was produced during the course of a diploma thesis in electrical engineering at the Faculty of Electrical Engineering of the Budapest University of Technology and Economics.
 
 ## Setup
+The program was developed in a linux enviroment. In order to work please consider downloading into a linux enviroment
+or use wsl (Windows Subsystem for Linux) alternatively
 
 1. Clone repository:
    ```bash

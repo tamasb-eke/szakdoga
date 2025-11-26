@@ -116,8 +116,9 @@ def chat_llm_api(run_id:int, chatbot:Union[Openai, Anthropic, Google], model:str
                     reasoning=reasoning
                 )
                 print(f"[Chatbot]: {answer}")
+        
+        i += 1
             
-
     chat = get_chatbot()
     json_path = chat.save_json(run_id=run_id, return_path=True)
     db.run.update(run_id=run_id, value=json_path, json_path=True)

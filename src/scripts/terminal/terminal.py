@@ -67,6 +67,7 @@ def words():
             is_in, cache = in_3_letter_scrabble_words(word, cache)
             if not is_in:
                 print(f"Word '{word}' is not in the list of three-letter Scrabble words.")
+                return
         
         print("True")
 
