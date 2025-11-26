@@ -74,7 +74,16 @@ class Database:
       
       from scripts.logger.logger import get_logger
       logger = get_logger(__name__)
+      sum_ = 0
+      weighting = {
+         "Too short chain length" : 0.8,
+         "Repeting words" : 0.6,
+         "Not neighbours" : 0.4,
+         "Not in the acceptable .txt list" : 0.2,
+         "True" : 0
+      }
 
+      
       if self.run.get_(run_id, "successful") == "True":
 
          distribution = self.answer.get_all_error(run_id)
@@ -85,9 +94,12 @@ class Database:
          print(f"Number of answers: {total_answers}  run id:{run_id}")
          print("\n")
 
-         for key, value in distribution.items():
-            percentage = (value / total_answers * 100) if total_answers else 0
-            print(f"{key}:{' ' * (50 - len(key))}{value} ({percentage:.1f}%)")
+         for key in distribution:
+            sum_ += distribution[key] * weighting[key]
+            percentage = (distribution[key] / total_answers * 100) if total_answers else 0
+            print(f"{key}:{' ' * (50 - len(key))}{distribution[key]} ({percentage:.1f}%)")
+            
+         print(f'\nError weight sum {sum_}')
          
       else:
          from scripts.logger.logger import get_logger
