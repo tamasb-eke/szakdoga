@@ -81,7 +81,7 @@ def llm_messages_loader(llm_messages:list[dict], run_id:int = None, date:str = d
     if not run_id:
         run_id = db.run.get_latest_id()
 
-    for content in (item["say"] for item in llm_messages if item["role"] == "Response"):
+    for content in (item["content"] for item in llm_messages if item["role"] == "Response"):
 
         if not syntactic_validation(content):
             logger.warning(f"Incorrect syntactic for wordchain: {content}") #can happen because llm gives not just answers
@@ -335,6 +335,8 @@ def evaluate_results():
     db = get_database()
     run_id = select_result()
 
+    if run_id == 'e':
+        return
     db.evaluation(run_id=run_id)
 
     print("\n\nDo you want to save the results to a .csv? (y) Yes (n) No")

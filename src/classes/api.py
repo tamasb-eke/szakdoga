@@ -68,7 +68,7 @@ class Openai:
     def interact(self, message: str, model: str = "o1-pro", reasoning: bool = False) -> str:
         """A function that makes the callig, and getting the answer from the LLM"""
 
-        llm_messages[1]["messages"].append({"role": "Promt", "say": message})
+        llm_messages[1]["messages"].append({"role": "Promt", "content": message})
 
         response = self.client.chat.completions.create(
             model=model,
@@ -77,9 +77,10 @@ class Openai:
         )
 
         reply = response.choices[0].message["content"]
-        llm_messages[1]["messages"].append({"role": "Response", "say": reply})
+        llm_messages[1]["messages"].append({"role": "Response", "content": reply})
 
         return reply
+    
 
 class Anthropic:
 
@@ -91,19 +92,19 @@ class Anthropic:
     def interact(self, message: str, model: str = "claude-3-opus-20240229", reasoning: bool = False) -> str:
         """A function that makes the callig, and getting the answer from the LLM"""
         
-        llm_messages[1]["messages"].append({"role": "Prompt", "say": message})
+        llm_messages[1]["messages"].append({"role": "Prompt", "content": message})
 
         response = self.client.messages.create(
             model=model,
             max_tokens=1024,
-            messages=llm_messages,
+            messages=message,
             thinking={
                 "type": "enabled",
                 "budget_tokens": 1000
             } if reasoning else None,
         )
 
-        llm_messages[1]["messages"].append({"role": "Response", "say": response.content})
+        llm_messages[1]["messages"].append({"role": "Response", "content": response.content})
 
         return response.content
 
@@ -113,22 +114,41 @@ class Google:
         self.client = genai.Client(api_key=api_key)
         self.api_key = api_key
 
+            
+    def convert_dictionary_to_contect(self, messages:list) -> list:
+
+        gemini_contents = []
+
+        for msg in messages:
+
+            gemini_contents.append(
+                types.Content(
+                    role = "model" if msg["role"] == "Response" else "user",
+                    parts = [
+                        types.Part.from_text(text=msg["content"])
+                    ]
+                )
+            )
+
+        return gemini_contents
+
     @safe_operation(default_return="")
     def interact(self, message: str, model: str = "gemini-2.5-flash", reasoning: bool = False) -> str:
         """A function that makes the callig, and getting the answer from the LLM"""
 
-        llm_messages[1]["messages"].append({"role": "Prompt", "say": message})
+        llm_messages[1]["messages"].append({"role": "Prompt", "content": message})
         thinking_budget = 1024 if reasoning else 0
+        converted_messages = self.convert_dictionary_to_contect(llm_messages[1]["messages"])
 
         response = self.client.models.generate_content(
             model=model, 
-            contents=llm_messages,
+            contents=converted_messages,
             config=types.GenerateContentConfig(
                 thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget)
             ),
         )
 
-        llm_messages[1]["messages"].append({"role": "Response", "say": response.text})
+        llm_messages[1]["messages"].append({"role": "Response", "content": response.text})
 
         return response.text
 

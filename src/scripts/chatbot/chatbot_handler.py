@@ -5,6 +5,7 @@ from scripts.basic_tools import print_table, clear_console
 from scripts.question_validation import syntactic_validation, semantic_validation
 from itertools import zip_longest
 from typing import Union
+from pathlib import Path
 
 
 def initialize_chatbot_communication():
@@ -49,7 +50,7 @@ def initialize_chatbot_communication():
             clear_console()
             print(f"\nThe given task_id ({task_id}) was not recognisable. Please choose another one.\n")
             continue
-        number_of_questions = input("Enter a number: ")
+        number_of_questions = input("Enter the number of games to play: ")
         if not number_of_questions.isdigit():
             clear_console()
             print(f"\nThe given number of question ({number_of_questions}) was not a number. Please Try again.\n")
@@ -66,10 +67,16 @@ def chat_llm_api(run_id:int, chatbot:Union[Openai, Anthropic, Google], model:str
     """
 
     db = get_database()
+    answer = ''
 
     # First conversation about the game rules
     while answer != "I understand the game" and answer != "I understand the game.":
         game_description = input("[USER]: ")
+        
+        temp = game_description
+        if Path(game_description).is_file():
+            with open(Path(game_description), 'r') as f:
+                game_description = f.read()
 
         answer = chatbot.interact(
             message=game_description,
@@ -115,13 +122,12 @@ def chat_llm_api(run_id:int, chatbot:Union[Openai, Anthropic, Google], model:str
                     message=game_description, 
                     reasoning=reasoning
                 )
-                print(f"[Chatbot]: {answer}")
-        
+                
         i += 1
             
     chat = get_chatbot()
     json_path = chat.save_json(run_id=run_id, return_path=True)
-    db.run.update(run_id=run_id, value=json_path, json_path=True)
+    db.run.update(run_id=run_id, value=str(json_path), json_path=True)
     db.evaluation(run_id=run_id)
 
 
@@ -131,7 +137,7 @@ def start_conversation() -> None:
     llm_id, task_id, number_of_questions = initialize_chatbot_communication()
     db = get_database()
     
-    chat_instance = db.llm.get_(llm_id=llm_id, column="name")
+    chat_instance = db.llm.get_(llm_id=llm_id, column="name").lower()
 
     if chat_instance == "chatGPT":
         chatbot = get_chatbot()
@@ -152,7 +158,7 @@ def start_conversation() -> None:
         run_id=db.run.get_latest_id(),
         chatbot = ch,
         model = db.llm.get_(llm_id=llm_id, column="model"),
-        reasoning = db.llm.get_(llm_id=llm_id, column="reasoning"),
+        reasoning = True if db.llm.get_(llm_id=llm_id, column="reasoning") == 'True' else False,
         number_of_questions=number_of_questions
     )
 
