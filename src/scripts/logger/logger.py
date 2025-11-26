@@ -15,6 +15,13 @@ class LevelBasedFormatter(logging.Formatter):
         else:
             return self.simple_fmt.format(record)
 
+def set_custom_logging_level():
+    """silence given packages logging messages"""
+
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("google").setLevel(logging.WARNING)
+
 
 def setup_logging(default_level: int = logging.INFO) -> None:
     """Configure root logger with handlers"""
@@ -30,7 +37,8 @@ def setup_logging(default_level: int = logging.INFO) -> None:
     ch.setLevel(default_level)
     ch.setFormatter(LevelBasedFormatter())
     root_logger.addHandler(ch)
-
+    set_custom_logging_level()
+    
     root_logger.info(f"Starting new logging session")
  
 
