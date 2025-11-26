@@ -94,7 +94,7 @@ class Database:
 
       print("\n\n")
       print("*" * 50 + "ANSWERS" + "*" * 50)
-      print(f"Number of answers: {total_answers}  run id:{run_id}")
+      print(f"Number of answers:{total_answers}  run id:{run_id}")
       print("\n")
 
       for key in distribution:

@@ -68,7 +68,7 @@ def chat_llm_api(run_id:int, chatbot:Union[Openai, Anthropic, Google], model:str
 
     db = get_database()
     answer = ''
-
+    print('\n--- Conversation started ---')
     # First conversation about the game rules
     while answer != "I understand the game" and answer != "I understand the game.":
         game_description = input("[USER]: ")
@@ -125,9 +125,11 @@ def chat_llm_api(run_id:int, chatbot:Union[Openai, Anthropic, Google], model:str
                 
         i += 1
             
+    print('\n --- Conversation finished ---')
     chat = get_chatbot()
     json_path = chat.save_json(run_id=run_id, return_path=True)
     db.run.update(run_id=run_id, value=str(json_path), json_path=True)
+    db.run.update(run_id=run_id, value="True")
     db.evaluation(run_id=run_id)
 
 
@@ -139,7 +141,7 @@ def start_conversation() -> None:
     
     chat_instance = db.llm.get_(llm_id=llm_id, column="name").lower()
 
-    if chat_instance == "chatGPT":
+    if chat_instance == "chatgpt":
         chatbot = get_chatbot()
         ch = chatbot.chatgpt
     elif chat_instance == "claude":

@@ -10,7 +10,7 @@ from datetime import datetime
 _chatbot_instance = None
 llm_messages = [
     {"date": datetime.now().strftime('%Y-%m-%d-%H-%M-%S')},
-    {"messages": [{"role": "system", "content": "You are a helpful assistant."}]}
+    {"messages": []}
 ]
 data_folder = Path("data/chatbot_results")
 
@@ -68,16 +68,16 @@ class Openai:
     def interact(self, message: str, model: str = "o1-pro", reasoning: bool = False) -> str:
         """A function that makes the callig, and getting the answer from the LLM"""
 
-        llm_messages[1]["messages"].append({"role": "Promt", "content": message})
+        llm_messages[1]["messages"].append({"role": "user", "content": message})
 
         response = self.client.chat.completions.create(
             model=model,
-            messages=llm_messages,
+            messages=llm_messages[1]["messages"],
             extra_body={"reasoning": reasoning} if reasoning else None
         )
 
-        reply = response.choices[0].message["content"]
-        llm_messages[1]["messages"].append({"role": "Response", "content": reply})
+        reply = response.choices[0].message.content
+        llm_messages[1]["messages"].append({"role": "assistant", "content": reply})
 
         return reply
     
@@ -92,21 +92,27 @@ class Anthropic:
     def interact(self, message: str, model: str = "claude-3-opus-20240229", reasoning: bool = False) -> str:
         """A function that makes the callig, and getting the answer from the LLM"""
         
-        llm_messages[1]["messages"].append({"role": "Prompt", "content": message})
+        llm_messages[1]["messages"].append({"role": "user", "content": message})
 
         response = self.client.messages.create(
             model=model,
             max_tokens=1024,
-            messages=message,
+            messages=llm_messages[1]["messages"],
             thinking={
                 "type": "enabled",
                 "budget_tokens": 1000
-            } if reasoning else None,
+            } if reasoning else {"type": "disabled"},
         )
 
-        llm_messages[1]["messages"].append({"role": "Response", "content": response.content})
+        assistant_message = ""
+        for block in response.content:
+            if block.type == "text":
+                assistant_message += block.text
+        
+        llm_messages[1]["messages"].append({"role": "assistant", "content": assistant_message})
 
-        return response.content
+        return assistant_message
+    
 
 class Google:
 
@@ -123,7 +129,7 @@ class Google:
 
             gemini_contents.append(
                 types.Content(
-                    role = "model" if msg["role"] == "Response" else "user",
+                    role = "model" if msg["role"] == "assistant" else "user",
                     parts = [
                         types.Part.from_text(text=msg["content"])
                     ]
@@ -136,7 +142,7 @@ class Google:
     def interact(self, message: str, model: str = "gemini-2.5-flash", reasoning: bool = False) -> str:
         """A function that makes the callig, and getting the answer from the LLM"""
 
-        llm_messages[1]["messages"].append({"role": "Prompt", "content": message})
+        llm_messages[1]["messages"].append({"role": "user", "content": message})
         thinking_budget = 1024 if reasoning else 0
         converted_messages = self.convert_dictionary_to_contect(llm_messages[1]["messages"])
 
@@ -148,7 +154,7 @@ class Google:
             ),
         )
 
-        llm_messages[1]["messages"].append({"role": "Response", "content": response.text})
+        llm_messages[1]["messages"].append({"role": "assistant", "content": response.text})
 
         return response.text
 
