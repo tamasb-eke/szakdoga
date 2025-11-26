@@ -84,27 +84,26 @@ class Database:
       }
 
       
-      if self.run.get_(run_id, "successful") == "True":
-
-         distribution = self.answer.get_all_error(run_id)
-         total_answers = self.run.get_number_of_questions(run_id)
-
-         print("\n\n")
-         print("*" * 50 + "ANSWERS" + "*" * 50)
-         print(f"Number of answers: {total_answers}  run id:{run_id}")
-         print("\n")
-
-         for key in distribution:
-            sum_ += distribution[key] * weighting[key]
-            percentage = (distribution[key] / total_answers * 100) if total_answers else 0
-            print(f"{key}:{' ' * (50 - len(key))}{distribution[key]} ({percentage:.1f}%)")
-            
-         print(f'\nError weight sum {sum_}')
-         
-      else:
+      if self.run.get_(run_id, "successful").lower() == "false":
          from scripts.logger.logger import get_logger
          logger = get_logger(__name__)
-         logger.error(f"The running was unsuccessful: {run_id}")
+         logger.warning(f"The running was unsuccessful, this might affected results")
+
+      distribution = self.answer.get_all_error(run_id)
+      total_answers = self.run.get_number_of_questions(run_id)
+
+      print("\n\n")
+      print("*" * 50 + "ANSWERS" + "*" * 50)
+      print(f"Number of answers: {total_answers}  run id:{run_id}")
+      print("\n")
+
+      for key in distribution:
+         sum_ += distribution[key] * weighting[key]
+         percentage = (distribution[key] / total_answers * 100) if total_answers else 0
+         print(f"{key}:{' ' * (50 - len(key))}{distribution[key]} ({percentage:.1f}%)")
+         
+      print(f'\nError weight sum {sum_}')
+         
 
 
 

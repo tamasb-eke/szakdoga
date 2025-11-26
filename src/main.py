@@ -46,7 +46,6 @@ def main():
                 clear_console()
             case '2':
                 start_conversation()
-                input("\nPress any key to continue")
                 clear_console()
             case '3':
                 evaluate_results()
