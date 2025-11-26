@@ -3,7 +3,7 @@ from classes.db_manager import get_database
 from dateutil import parser, tz
 from scripts.basic_tools import clear_console
 from pathlib import Path
-from scripts.basic_tools import print_table
+from scripts.basic_tools import print_table, load_data
 from scripts.question_validation import semantic_validation
 
 def clear_unesecarry():
@@ -188,8 +188,57 @@ def select_result():
         else:
             return int(run_id)
     
-    clear_console()
-    
+@safe_operation()
+def convert_json_keys(path: Path) -> list:
+    """
+    Loads JSON, converts keys/values in the 'messages' list 
+    to standard format, and strictly validates inputs.
+
+    It is needed because some of the exported .json have different key-value pairs
+    """
+
+    data = load_data(path)
+
+    if "messages" not in data:
+        raise ValueError("Invalid JSON structure: missing 'messages' key.")
+
+    original_messages = data['messages']
+    converted_messages = []
+    role_mapping = {
+        "Prompt": "user",
+        "Response": "assistant",
+        "user": "user",
+        "assistant": "assistant"
+    }
+
+    for index, msg in enumerate(original_messages):
+        new_msg = {}
+        allowed_keys = {"role", "say", "content"}
+        
+        for key in msg.keys():
+            if key not in allowed_keys:
+                raise ValueError(f"Unknown key '{key}' in given json")
+
+        if "role" not in msg:
+            raise ValueError(f"Missing 'role' key at message index {index}.")
+        
+        input_role = msg["role"]
+        if input_role not in role_mapping:
+            raise ValueError(f"Unknown role '{input_role}'")
+       
+        new_msg["role"] = role_mapping[input_role]
+
+        if "say" in msg:
+            new_msg["content"] = msg["say"]
+        elif "content" in msg:
+            new_msg["content"] = msg["content"]
+        else:
+            raise ValueError(f"Missing content key ('say' or 'content') at message index {index}.")
+
+        converted_messages.append(new_msg)
+
+    data['messages'] = converted_messages
+    return data
 
 @safe_operation()
 def re_evaluate_validation(run_id:int):

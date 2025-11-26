@@ -5,7 +5,7 @@ from datetime import datetime
 from scripts.question_validation import syntactic_validation, semantic_validation
 from scripts.logger.logger import get_logger
 from scripts.safe_operation import safe_operation
-from scripts.basic_tools import ROOT, load_data, clear_console, SAVED_CONVERSATION_PATH
+from scripts.basic_tools import ROOT, clear_console, SAVED_CONVERSATION_PATH
 from classes.db_manager import get_database
 from scripts.load.load_helper import *
 from scripts.visualize.viz import visualizer
@@ -33,7 +33,7 @@ def load_json_to_db(file_path:Path, run_id:int, date:str) -> None:
     :param run_id: The ID of the run you want to insert
     :param date: The date of the file
     """
-    data = load_data(file_path)
+    data = convert_json_keys(file_path)
     llm_messages_loader(
         llm_messages=data,
         run_id=run_id,
@@ -81,7 +81,7 @@ def llm_messages_loader(llm_messages:list[dict], run_id:int = None, date:str = d
     if not run_id:
         run_id = db.run.get_latest_id()
 
-    for content in (item["content"] for item in llm_messages if item["role"] == "Response"):
+    for content in (item["content"] for item in llm_messages if item["role"] == "assistant"):
 
         if not syntactic_validation(content):
             logger.warning(f"Incorrect syntactic for wordchain: {content}") #can happen because llm gives not just answers
@@ -335,7 +335,7 @@ def evaluate_results():
     db = get_database()
     run_id = select_result()
 
-    if run_id == 'e':
+    if not run_id:
         return
     db.evaluation(run_id=run_id)
 
