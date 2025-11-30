@@ -13,6 +13,7 @@ GMPL_PATH = Path(ROOT/'data/other_data_files/word_morph_network.gml')
 VALID_WORDS_PATH = Path(ROOT/'data/game_guides/valid_three_letter_words.txt')
 SAVE_PICTURE_PATH = Path(ROOT/'data/exported_pictures')
 SAVE_CSV_PATH = Path(ROOT/'data/exported_csv')
+DATA_FOLDER = Path("data/chatbot_results")
 
 load_dotenv(ROOT/'config/.env')
 

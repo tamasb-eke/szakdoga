@@ -102,7 +102,7 @@ class Database:
          percentage = (distribution[key] / total_answers * 100) if total_answers else 0
          print(f"{key}:{' ' * (50 - len(key))}{distribution[key]} ({percentage:.1f}%)")
          
-      print(f'\nError weight sum {sum_}')
+      print(f'\nError weight sum {sum_:.2f}')
          
 
 

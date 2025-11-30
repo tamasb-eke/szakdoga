@@ -110,7 +110,7 @@ def chat_llm_api(run_id:int, chatbot:Union[Openai, Anthropic, Google], model:str
                 validation_message=validation_message
             )
 
-            print(f"{i}/{number_of_questions}) source word: {question['sourceWord']}, target word: {question['targetWord']}, validation {validation_message}")
+            print(f"({i}/{number_of_questions}) source word: {question['sourceWord']}, target word: {question['targetWord']}, validation {validation_message}")
 
 
         else:
