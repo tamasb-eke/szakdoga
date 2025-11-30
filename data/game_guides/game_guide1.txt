@@ -1,4 +1,4 @@
-1.	You are given the following task. I will give you two English words each with 3 letters. 
+You are given the following task. I will give you two English words each with 3 letters. 
 Your task is to move from one word (which I give you first) to the other by changing only one letter of the original word at a time. 
 
 So if I give you fit and cat, your source word is fit and your target word is cat. 
