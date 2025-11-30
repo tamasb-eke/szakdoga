@@ -1,12 +1,13 @@
-from openai import OpenAI
+import anthropic, json, time
+from openai import OpenAI, RateLimitError
 from google import genai
 from google.genai import types
-import anthropic
+from pathlib import Path
+from datetime import datetime
 from scripts.safe_operation import safe_operation
 from scripts.basic_tools import DATA_FOLDER
-from pathlib import Path
-import json
-from datetime import datetime
+
+
 
 _chatbot_instance = None
 llm_messages = [
@@ -66,22 +67,36 @@ class Openai:
         self.api_key = api_key
         
     @safe_operation(default_return="")
-    def interact(self, message: str, model: str = "o1-pro", reasoning: bool = False, temperature:float = None) -> str:
-        """A function that makes the callig, and getting the answer from the LLM"""
+
+
+    def interact(self, message: str, model: str = "o1-pro", reasoning: bool = False, temperature: float = None) -> str:
+        """A function that makes the call, handles rate limits, and gets the answer from the LLM"""
 
         llm_messages[1]["messages"].append({"role": "user", "content": message})
+        max_retries = 5
+        base_delay = 2
 
-        response = self.client.chat.completions.create(
-            model=model,
-            messages=llm_messages[1]["messages"],
-            extra_body={"reasoning": reasoning} if reasoning else None,
-            temperature=temperature if temperature else None
-        )
+        for attempt in range(max_retries):
+            try:
+                response = self.client.chat.completions.create(
+                    model=model,
+                    messages=llm_messages[1]["messages"],
+                    extra_body={"reasoning": reasoning} if reasoning else None,
+                    temperature=temperature if temperature is not None else None
+                )
+                
+                reply = response.choices[0].message.content
+                llm_messages[1]["messages"].append({"role": "assistant", "content": reply})
+                return reply
 
-        reply = response.choices[0].message.content
-        llm_messages[1]["messages"].append({"role": "assistant", "content": reply})
-
-        return reply
+            except RateLimitError as e:
+                if attempt == max_retries - 1:
+                    raise e
+                print(f"Rate limit hit. Waiting {base_delay} seconds before retry...")
+                time.sleep(base_delay)
+                base_delay *= 2 
+                
+        return ""
     
 
 class Anthropic:
