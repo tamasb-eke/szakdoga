@@ -3,6 +3,7 @@ from google import genai
 from google.genai import types
 import anthropic
 from scripts.safe_operation import safe_operation
+from scripts.basic_tools import DATA_FOLDER
 from pathlib import Path
 import json
 from datetime import datetime
@@ -12,7 +13,7 @@ llm_messages = [
     {"date": datetime.now().strftime('%Y-%m-%d-%H-%M-%S')},
     {"messages": []}
 ]
-data_folder = Path("data/chatbot_results")
+
 
 class Chatbot:
 
@@ -38,8 +39,8 @@ class Chatbot:
         timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M')
         filename = f"{llm_name}_chat_history_{timestamp}_{run_id}.json"
 
-        relative_path = data_folder / filename
-        data_folder.mkdir(parents=True, exist_ok=True)
+        relative_path = DATA_FOLDER / filename
+        DATA_FOLDER.mkdir(parents=True, exist_ok=True)
 
         return relative_path
 
@@ -65,7 +66,7 @@ class Openai:
         self.api_key = api_key
         
     @safe_operation(default_return="")
-    def interact(self, message: str, model: str = "o1-pro", reasoning: bool = False) -> str:
+    def interact(self, message: str, model: str = "o1-pro", reasoning: bool = False, temperature:float = None) -> str:
         """A function that makes the callig, and getting the answer from the LLM"""
 
         llm_messages[1]["messages"].append({"role": "user", "content": message})
@@ -73,7 +74,8 @@ class Openai:
         response = self.client.chat.completions.create(
             model=model,
             messages=llm_messages[1]["messages"],
-            extra_body={"reasoning": reasoning} if reasoning else None
+            extra_body={"reasoning": reasoning} if reasoning else None,
+            temperature=temperature if temperature else None
         )
 
         reply = response.choices[0].message.content
@@ -89,7 +91,7 @@ class Anthropic:
         self.client = anthropic.Anthropic(api_key=api_key)
 
     @safe_operation(default_return="")
-    def interact(self, message: str, model: str = "claude-3-opus-20240229", reasoning: bool = False) -> str:
+    def interact(self, message: str, model: str = "claude-3-opus-20240229", reasoning: bool = False, temperature: float = 1.0) -> str:
         """A function that makes the callig, and getting the answer from the LLM"""
         
         llm_messages[1]["messages"].append({"role": "user", "content": message})
@@ -102,6 +104,7 @@ class Anthropic:
                 "type": "enabled",
                 "budget_tokens": 1000
             } if reasoning else {"type": "disabled"},
+            temperature=temperature if temperature != 1.0 else 1.0
         )
 
         assistant_message = ""
@@ -139,7 +142,7 @@ class Google:
         return gemini_contents
 
     @safe_operation(default_return="")
-    def interact(self, message: str, model: str = "gemini-2.5-flash", reasoning: bool = False) -> str:
+    def interact(self, message: str, model: str = "gemini-2.5-flash", reasoning: bool = False, temperature:float = None) -> str:
         """A function that makes the callig, and getting the answer from the LLM"""
 
         llm_messages[1]["messages"].append({"role": "user", "content": message})
@@ -150,7 +153,8 @@ class Google:
             model=model, 
             contents=converted_messages,
             config=types.GenerateContentConfig(
-                thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget)
+                thinking_config=types.ThinkingConfig(thinking_budget=thinking_budget),
+                temperature=temperature if temperature else None
             ),
         )
 
