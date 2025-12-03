@@ -16,7 +16,7 @@ def export_to_scv(run_id:int) -> None:
         - Shortest chainword based on the Source and Targetword
         - Length of the shortest chainword for the Source and Targetword
     """
-
+    APP_ENV_ = APP_ENV if APP_ENV else ""
     logger = get_logger()
     db = get_database()
     answers = db.answer.get_all(run_id=run_id)
@@ -24,7 +24,6 @@ def export_to_scv(run_id:int) -> None:
     outputfilepath = SAVE_CSV_PATH / f"{run_id}_{llm_name}_{APP_ENV_}_output.csv"
     
     print(f"Exporting to {outputfilepath} ....")
-    APP_ENV_ = APP_ENV if APP_ENV else ""
     
     if outputfilepath.exists():
         logger.warning(f"Can not export {run_id}, it was already exported at: {outputfilepath}")
@@ -34,7 +33,7 @@ def export_to_scv(run_id:int) -> None:
     for r in answers:
         try:
             sht = find_shortest_word_path(r['sourceWord'].lower(), r['targetWord'].lower())[0]
-            shortest = "-".join(sht)
+            shortest = "-".join(sht) if sht else "invalid word in wordchain"
             data = {
                 'source_word': r['sourceWord'].lower(),
                 'target_word': r['targetWord'].lower(),
@@ -42,7 +41,7 @@ def export_to_scv(run_id:int) -> None:
                 'chain': r['chain'].lower(),
                 'chain_length': r['chain_length'],
                 'shortest_path': shortest,
-                'shortest_length': len(sht)
+                'shortest_length': len(sht) if sht else 0
             }
             exported_data.append(data)
         except Exception as e:

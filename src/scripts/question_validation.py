@@ -137,4 +137,4 @@ def find_shortest_word_path(word1:str, word2:str):
         path = nx.shortest_path(G, source=word1, target=word2)
         return path, len(path)
     except nx.NetworkXNoPath:
-        return None 
+        return None, None
