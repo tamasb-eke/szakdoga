@@ -36,13 +36,13 @@ def repeting_words(word_chain:str) -> bool:
     :pamar word_chain (str): A string with words separated by hyphens (e.g., "KIS-KAS-KAM-MAX")
     """
     
-    seen = set()
     words = word_chain.split('-')
-    
+    previous = ''
+
     for word in words:
-        if word in seen:
+        if word == previous:
             return True
-        seen.add(word)
+        previous = word
     return False
 
 
