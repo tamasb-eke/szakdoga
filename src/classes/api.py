@@ -73,7 +73,7 @@ class Openai:
         """A function that makes the call, handles rate limits, and gets the answer from the LLM"""
 
         llm_messages[1]["messages"].append({"role": "user", "content": message})
-        max_retries = 5
+        max_retries = 3
         base_delay = 2
 
         for attempt in range(max_retries):

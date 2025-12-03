@@ -4,6 +4,8 @@ from scripts.basic_tools import SAVE_CSV_PATH
 from scripts.logger.logger import get_logger
 from scripts.question_validation import find_shortest_word_path
 from scripts.safe_operation import safe_operation
+from scripts.load_enviroment import APP_ENV
+
 
 @safe_operation()
 def export_to_scv(run_id:int) -> None:
@@ -17,10 +19,13 @@ def export_to_scv(run_id:int) -> None:
 
     logger = get_logger()
     db = get_database()
-    answers = db.answer.get_all(run_id=run_id, only_correct=True)
-    print(f"Exporting to {run_id}.csv ....")
-
-    outputfilepath = SAVE_CSV_PATH / f"{run_id}_output.csv"
+    answers = db.answer.get_all(run_id=run_id)
+    llm_name = db.llm.get_(llm_id=db.run.get_(run_id,"llm_id"),column="name")
+    outputfilepath = SAVE_CSV_PATH / f"{run_id}_{llm_name}_{APP_ENV_}_output.csv"
+    
+    print(f"Exporting to {outputfilepath} ....")
+    APP_ENV_ = APP_ENV if APP_ENV else ""
+    
     if outputfilepath.exists():
         logger.warning(f"Can not export {run_id}, it was already exported at: {outputfilepath}")
         return
@@ -28,13 +33,16 @@ def export_to_scv(run_id:int) -> None:
     exported_data = []
     for r in answers:
         try:
+            sht = find_shortest_word_path(r['sourceWord'].lower(), r['targetWord'].lower())[0]
+            shortest = "-".join(sht)
             data = {
                 'source_word': r['sourceWord'].lower(),
                 'target_word': r['targetWord'].lower(),
+                'validation': r['validation'],
                 'chain': r['chain'].lower(),
                 'chain_length': r['chain_length'],
-                'shortest_path': (shortest := find_shortest_word_path(r['sourceWord'].lower(), r['targetWord'].lower()))[0],
-                'shortest_length': shortest[1]
+                'shortest_path': shortest,
+                'shortest_length': len(sht)
             }
             exported_data.append(data)
         except Exception as e:

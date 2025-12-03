@@ -342,14 +342,12 @@ def evaluate_results():
     print("\n\nDo you want to save the results to a .csv? (y) Yes (n) No")
     export = input("Y/N: ").lower()
     if export in ['y', 'yes']:
-        clear_console()
         export_to_scv(run_id=int(run_id))
     
     
     print("\n\nDo you want to visualize the results? (y) Yes (n) No")
     visualize = input("Y/N: ").lower()
     if visualize in ['y', 'yes']:
-        clear_console()
         visualizer(run_id=int(run_id))
 
 def re_evaluate_results():
