@@ -74,7 +74,8 @@ class Database:
       
       from scripts.logger.logger import get_logger
       logger = get_logger(__name__)
-      sum_ = 0
+      weighted_sum = 0
+      total_items = 0
       weighting = {
          "Too short chain length" : 0.8,
          "Repeting words" : 0.6,
@@ -98,11 +99,13 @@ class Database:
       print("\n")
 
       for key in distribution:
-         sum_ += distribution[key] * weighting[key]
+         weighted_sum += distribution[key] * weighting[key]
+         total_items += distribution[key]
          percentage = (distribution[key] / total_answers * 100) if total_answers else 0
          print(f"{key}:{' ' * (50 - len(key))}{distribution[key]} ({percentage:.1f}%)")
-         
-      print(f'\nError weight sum {sum_:.2f}')
+      
+      percentage = (weighted_sum / (total_items * 0.8)) * 100
+      print(f'\nError weight sum_percent {percentage:.2f}%')
          
 
 
