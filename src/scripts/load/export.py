@@ -33,7 +33,7 @@ def export_to_scv(run_id:int) -> None:
     for r in answers:
         try:
             sht = find_shortest_word_path(r['sourceWord'].lower(), r['targetWord'].lower())[0]
-            shortest = "-".join(sht) if len(sht) and not None > 1 else sht
+            shortest = "-".join(sht) if len(sht) > 1 and not None  else sht
             data = {
                 'source_word': r['sourceWord'].lower(),
                 'target_word': r['targetWord'].lower(),
