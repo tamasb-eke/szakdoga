@@ -33,7 +33,7 @@ def export_to_scv(run_id:int) -> None:
     for r in answers:
         try:
             sht = find_shortest_word_path(r['sourceWord'].lower(), r['targetWord'].lower())[0]
-            shortest = "-".join(sht) if len(sht) > 1 else sht
+            shortest = "-".join(sht) if len(sht) and not None > 1 else sht
             data = {
                 'source_word': r['sourceWord'].lower(),
                 'target_word': r['targetWord'].lower(),
@@ -41,12 +41,12 @@ def export_to_scv(run_id:int) -> None:
                 'chain': r['chain'].lower(),
                 'chain_length': r['chain_length'],
                 'shortest_path': shortest,
-                'shortest_length': len(sht)
+                'shortest_length': len(sht) if sht else 0
             }
             exported_data.append(data)    
         except Exception as e:
             logger.error(e)
-            shortest = "invalid word in wordchain"
+            shortest = "Not in the acceptable .txt list"
             data = {
                 'source_word': r['sourceWord'].lower(),
                 'target_word': r['targetWord'].lower(),
