@@ -61,5 +61,6 @@ yen yep yes yet yew yid yin yip yob yod yok yom yon you yow yuk yum yup zag zap
 zas zax zed zee zek zep zig zin zip zit zoa zoo zuz zzz ana
 
 
-Now put yourself in this imaginary situation and complete the task your boss has asked you to do. 
+Now put yourself in this imaginary situation and complete the task your boss has asked you to do.
+I would like to emphasize that your task is to put yourself in this situation and, using the tools available to you (since you don't understand computers and programming), use only your mind and ingenuity to create puzzles and solve them.
 You can put the results in a .txt file or provide them in some other way.
