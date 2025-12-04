@@ -122,7 +122,7 @@ def semantic_validation(data: str) -> str:
 #----------------------------- GRAPH SHORTEST PATH FUNCTIONS ---------------------------------------
 
 
-def find_shortest_word_path(word1:str, word2:str):
+def find_shortest_word_path(word1:str, word2:str) -> tuple[list, int] | tuple [None, None]:
     """
     Find the shortest path between two 3-letter words in the GML graph.
     """
