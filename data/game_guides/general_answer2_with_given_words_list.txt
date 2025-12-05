@@ -5,7 +5,7 @@ by changing only one letter at a time, and the changed word must also be a meani
 
 Let's look at an example: Starting word: FIT Target word: CAT Possible solution: FIT-FAT-CAT 
 
-After outlining the situation, your boss asks you to create 1,000 such puzzles, specifying the starting and target words and the solutions. Obviously, these are little brain teasers, so very simple solutions like CAR-BAR puzzles are not suitable. You need more difficult puzzles that require the use of several intermediate words. Unfortunately, you can't program, so you have to rely on your brain and creativity. 
+After outlining the situation, your boss asks you to create 200 such puzzles, specifying the starting and target words and the solutions. Obviously, these are little brain teasers, so very simple solutions like CAR-BAR puzzles are not suitable. You need more difficult puzzles that require the use of several intermediate words. Unfortunately, you can't program, so you have to rely on your brain and creativity. 
 
 As a hint, I will give you the words you can use when creating the puzzle. Please note that you should only use words from the list below when creating and solving the puzzle:
 aah aal aas aba abo abs aby ace act add ado ads adz aff aft aga age ago ags aha 
