@@ -45,7 +45,7 @@ def export_to_scv(run_id:int) -> None:
             }
             exported_data.append(data)    
         except Exception as e:
-            logger.error(e)
+            logger.warning(f"Handling: {e}")
             shortest = "Not in the acceptable .txt list"
             data = {
                 'source_word': r['sourceWord'].lower(),
