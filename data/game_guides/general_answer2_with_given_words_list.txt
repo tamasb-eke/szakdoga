@@ -3,7 +3,11 @@ Imagine the following situation. You are at work, and your boss gives you a stra
 You must provide a starting word and a target word. Only meaningful three-letter English words can be used. The solution is to create a word chain from the starting word to the target word 
 by changing only one letter at a time, and the changed word must also be a meaningful three-letter English word. 
 
-Let's look at an example: Starting word: FIT Target word: CAT Possible solution: FIT-FAT-CAT 
+Let's look at an examples: 
+Starting word: FIT Target word: CAT Possible solution: FIT-FAT-CAT 
+Starting word: ADD Target word: AFT Possible solution: ADD-AID-AIR-AIT-AFT 
+Starting word: PAP Target word: FEN Possible solution: PAP-PEP-PEN-FEN 
+Starting word: FIG Target word: VAT Possible solution: FIG-FIT-FAT-VAT
 
 After outlining the situation, your boss asks you to create 200 such puzzles, specifying the starting and target words and the solutions. Obviously, these are little brain teasers, so very simple solutions like CAR-BAR puzzles are not suitable. You need more difficult puzzles that require the use of several intermediate words. Unfortunately, you can't program, so you have to rely on your brain and creativity. 
 
