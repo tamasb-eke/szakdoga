@@ -127,14 +127,16 @@ def find_shortest_word_path(word1:str, word2:str) -> tuple[list, int] | tuple [N
     Find the shortest path between two 3-letter words in the GML graph.
     """
     G = nx.read_gml(GMPL_PATH, label="name")
-    
-    if word1 not in G:
-        raise ValueError(f"Word '{word1}' not found in the graph.")
-    if word2 not in G:
-        raise ValueError(f"Word '{word2}' not found in the graph.")
+    w1 = word1.lower()
+    w2 = word2.lower()
+
+    if w1 not in G:
+        raise ValueError(f"Word '{w1}' not found in the graph.")
+    if w2 not in G:
+        raise ValueError(f"Word '{w2}' not found in the graph.")
     
     try:
-        path = nx.shortest_path(G, source=word1, target=word2)
+        path = nx.shortest_path(G, source=w1, target=w2)
         return path, len(path)
     except nx.NetworkXNoPath:
-        return None, None
+        return [], 0

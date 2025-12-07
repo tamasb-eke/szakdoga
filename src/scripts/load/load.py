@@ -145,7 +145,7 @@ def study_results_to_db() -> None:
 
                 db.answer.insert(
                     run_id = run_id,
-                    chain = game['chain'],
+                    chain = game['chain'].replace(' ', '-'),
                     chain_length = game['chain_length'],
                     sourceword = game['sourceWord'],
                     targetword = game['targetWord'],

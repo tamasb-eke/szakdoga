@@ -32,8 +32,12 @@ def export_to_scv(run_id:int) -> None:
     exported_data = []
     for r in answers:
         try:
-            sht = find_shortest_word_path(r['sourceWord'].lower(), r['targetWord'].lower())[0]
-            shortest = "-".join(sht) if len(sht) > 1 and not None  else sht
+            path, length = find_shortest_word_path(r['sourceWord'], r['targetWord'])
+            shortest = "-".join(path) if length > 1 else path
+
+            if length > r['chain_length']:
+                raise ValueError(f"Shorter chain length than possible shortest...")
+            
             data = {
                 'source_word': r['sourceWord'].lower(),
                 'target_word': r['targetWord'].lower(),
@@ -41,20 +45,19 @@ def export_to_scv(run_id:int) -> None:
                 'chain': r['chain'].lower(),
                 'chain_length': r['chain_length'],
                 'shortest_path': shortest,
-                'shortest_length': len(sht) if sht else 0
+                'shortest_length': length
             }
             exported_data.append(data)    
         except Exception as e:
             logger.warning(f"Handling: {e}")
-            shortest = "Not in the acceptable .txt list"
             data = {
                 'source_word': r['sourceWord'].lower(),
                 'target_word': r['targetWord'].lower(),
-                'validation': r['validation'],
+                'validation': 'Too short chain length' if e == 'Shorter chain length than possible shortest...' else "Not in the acceptable .txt list",
                 'chain': r['chain'].lower(),
                 'chain_length': r['chain_length'],
-                'shortest_path': shortest,
-                'shortest_length': 0
+                'shortest_path': shortest if e == 'Shorter chain length than possible shortest...' else '[]',
+                'shortest_length': length if e == 'Shorter chain length than possible shortest...' else 0
             }
             exported_data.append(data)
 
