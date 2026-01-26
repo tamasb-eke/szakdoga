@@ -8,7 +8,7 @@ from scripts.safe_operation import safe_operation
 from scripts.basic_tools import ROOT, clear_console, SAVED_CONVERSATION_PATH
 from classes.db_manager import get_database
 from scripts.load.load_helper import *
-from scripts.visualize.viz import visualizer
+from scripts.visualize.graph import visualizer
 from .export import export_to_scv
 
 def extract_word_chain(string: str) -> str | None:

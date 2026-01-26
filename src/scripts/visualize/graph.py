@@ -14,21 +14,22 @@ from scripts.basic_tools import (
 )
 
 EDGE_STYLE_CONFIG = [
-    {'threshold': 50, 'label': '> 50 uses', 'style': {'color': 'red', 'linewidth': 9.0, 'alpha': 0.9}},
-    {'threshold': 30, 'label': '> 30 uses', 'style': {'color': (1.0, 0.27, 0), 'linewidth': 8.0, 'alpha': 0.9}},
-    {'threshold': 10, 'label': '> 10 uses', 'style': {'color': (1.0, 0.55, 0), 'linewidth': 7.0, 'alpha': 0.85}},
-    {'threshold': 7, 'label': '> 7 uses', 'style': {'color': 'orange', 'linewidth': 6.0, 'alpha': 0.85}},
-    {'threshold': 4, 'label': '> 4 uses', 'style': {'color': 'green', 'linewidth': 5.0, 'alpha': 0.8}},
-    {'threshold': 2, 'label': '> 2 uses', 'style': {'color': 'blue', 'linewidth': 4.0, 'alpha': 0.8}},
-    {'threshold': 0, 'label': '1-2 uses', 'style': {'color': 'lightblue', 'linewidth': 3.0, 'alpha': 0.8}}
+    {'threshold': 50, 'label': '> 50 használat', 'style': {'color': 'red', 'linewidth': 18.0, 'alpha': 0.9}},
+    {'threshold': 30, 'label': '> 30 használat', 'style': {'color': (1.0, 0.27, 0), 'linewidth': 14.0, 'alpha': 0.9}},
+    {'threshold': 10, 'label': '> 10 használat', 'style': {'color': (1.0, 0.55, 0), 'linewidth': 10.0, 'alpha': 0.85}},
+    {'threshold': 7, 'label': '> 7 használat', 'style': {'color': 'orange', 'linewidth': 8.0, 'alpha': 0.85}},
+    {'threshold': 4, 'label': '> 4 használat', 'style': {'color': 'green', 'linewidth': 5.0, 'alpha': 0.8}},
+    {'threshold': 2, 'label': '> 2 használat', 'style': {'color': 'blue', 'linewidth': 3.0, 'alpha': 0.8}},
+    {'threshold': 0, 'label': '1-2 használat', 'style': {'color': 'lightblue', 'linewidth': 1.0, 'alpha': 0.8}}
 ]
 
 NODE_LABEL_STYLE = {
-    'fontsize': 18,
+    'fontsize': 40,   # Legyen hatalmas!
     'fontweight': 'bold',
     'ha': 'center',
     'va': 'center',
-    'bbox': dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.85, edgecolor='lightgray'),
+    # Keret eltüntetése (edgecolor='none')
+    'bbox': dict(boxstyle='round,pad=0.2', facecolor='white', alpha=0.8, edgecolor='none'),
     'zorder': 3
 }
 
@@ -56,7 +57,10 @@ def count_edge_frequencies(run_id:int) -> defaultdict:
     chains = [r["chain"] for r in answers]
 
     for line in chains:
-        words = [word.lower() for word in line.strip().split('-') if word]
+        if run_id < 423:
+            words = [word.lower() for word in line.strip().split(' ') if word]
+        else:
+            words = [word.lower() for word in line.strip().split('-') if word]
         if len(words) < 2:
             continue
         for i in range(len(words) - 1):
@@ -99,17 +103,34 @@ def build_display_graph(gml_nodes: Set, edge_frequencies: defaultdict, min_edge_
 
 
 def calculate_optimized_layout(G: nx.Graph) -> Dict[str, np.ndarray]:
-    """Calculates node positions using spring layout and a custom overlap reduction algorithm."""
+    """Calculates node positions intended for a very sparse layout with large labels."""
 
-    pos = nx.spring_layout(G, k=2.0, iterations=300, seed=42)
+    node_count = len(G.nodes())
+    if node_count == 0:
+        return {}
+
+    # 1. LÉPÉS: Alap rugós modell, de nagyon erős "rúgókkal" (k érték)
+    # Minél több node van, annál nagyobb tér kell.
+    # A k=35.0 egy nagyon nagy szám, ez tolja szét őket.
+    k_val = 45.0 / np.sqrt(node_count)
+    
+    # Több iteráció (500) a stabilitásért
+    pos = nx.spring_layout(G, k=k_val, iterations=500, seed=42, weight='weight')
+    
+    # 2. LÉPÉS: Skálázás (Rescaling)
+    # Ez nyújtja ki a végleges koordinátákat a hatalmas 30x30-as vászonra.
+    # scale=35.0 nagyon nagy szóródást jelent.
     pos_array = np.array(list(pos.values()))
-    pos_array_rescaled = nx.rescale_layout(pos_array, scale=2.0)
+    pos_array_rescaled = nx.rescale_layout(pos_array, scale=35.0)
     pos = {node: pos_array_rescaled[i] for i, node in enumerate(pos.keys())}
-    node_radius = 0.065
-    min_dist = 2.5 * node_radius
+
+    # 3. LÉPÉS: Finomhangoló taszítás
+    # Mivel a címkék most óriásiak, a minimális biztonsági távolságot (min_dist)
+    # is nagyra kell venni.
+    min_dist = 5.0 # Ha még mindig fedik egymást a nagy betűk, növeld ezt (pl. 6.0 vagy 7.0)
     nodes = list(pos.keys())
 
-    for _ in range(50):
+    for _ in range(50): # 50 iteráció elég finomhangolásra
         adjustments = {node: np.zeros(2) for node in nodes}
         for i, node1 in enumerate(nodes):
             for node2 in nodes[i+1:]:
@@ -117,8 +138,8 @@ def calculate_optimized_layout(G: nx.Graph) -> Dict[str, np.ndarray]:
                 dist = np.linalg.norm(delta)
                 
                 if 0 < dist < min_dist:
-
-                    force = min((min_dist - dist) / min_dist * 0.15, 0.08)
+                    # Finom taszító erő
+                    force = (min_dist - dist) / min_dist * 0.2
                     direction = delta / dist
                     adjustments[node2] += direction * force
                     adjustments[node1] -= direction * force
@@ -129,31 +150,53 @@ def calculate_optimized_layout(G: nx.Graph) -> Dict[str, np.ndarray]:
     return pos
 
 def draw_graph_elements(ax: plt.Axes, G: nx.Graph, pos: Dict[str, np.ndarray]):
-    """Draws all visual components of the graph (edges, nodes, labels) onto the axes."""
+    """Draws graph with tiny nodes and huge labels exactly on node positions."""
 
+    # 1. Élek rajzolása
     for u, v, data in G.edges(data=True):
-        style = get_edge_style(data.get('weight', 0))
+        # Lekérjük a stílust és készítünk egy MÁSOLATOT
+        style = get_edge_style(data.get('weight', 0)).copy()
+        
+        # Átlátszóság beállítása
+        style['alpha'] = 0.6 
+        
         ax.plot([pos[u][0], pos[v][0]], [pos[u][1], pos[v][1]], 
                 solid_capstyle='round', zorder=1, **style)
 
-    node_collection = nx.draw_networkx_nodes(G, pos, ax=ax, node_size=100, node_color='black', alpha=0.7)
-    if node_collection:
-        node_collection.set_zorder(2)
+    # 2. Node-ok rajzolása - JAVÍTVA
+    # Kivettem a 'zorder=2' paramétert, mert a te verziód nem szereti.
+    # Mivel node_size=1 (apró), nem baj, ha nincs explicit rétegrendje,
+    # úgyis a hatalmas címkék (zorder=3) és az élek (zorder=1) dominálnak.
+    nodes = nx.draw_networkx_nodes(G, pos, ax=ax, node_size=1, node_color='black', alpha=0.3)
+    
+    # Ha mindenképp biztosra akarunk menni a rétegrenddel, így állíthatjuk be utólag:
+    if nodes:
+        nodes.set_zorder(2)
 
+    # 3. Címkék rajzolása
     for node, (x, y) in pos.items():
         ax.text(x, y, node, **NODE_LABEL_STYLE)
 
 def setup_plot_aesthetics(ax: plt.Axes, min_edge_frequency: int):
-    """Configures the plot's legend, title, and axes."""
+    """Configures the plot's legend outside the graph area."""
 
     legend_elements = [
         plt.Line2D([0], [0], label=config['label'], **config['style'])
         for config in EDGE_STYLE_CONFIG if min_edge_frequency <= config['threshold']
     ]
 
-    ax.legend(handles=legend_elements, loc='upper right', title="Élek gyakorisága", fontsize=30, title_fontsize=34, framealpha=0.95)
-    threshold_info = f" (min. gyakoriság: {min_edge_frequency})" if min_edge_frequency > 0 else ""
-    ax.set_title(f"Leggyakrabban használt útvonalak a Gráfban{threshold_info}", fontsize=50, fontweight='bold')
+    # bbox_to_anchor=(1, 1): A jobb felső sarok legyen a referencia, de a ploton KÍVÜL
+    ax.legend(handles=legend_elements, 
+              loc='upper left', 
+              bbox_to_anchor=(1.0, 1.0), # Ez teszi ki a jobb szélre
+              title="Élek gyakorisága", 
+              fontsize=40, 
+              title_fontsize=44, 
+              framealpha=1.0) # Teljesen átlátszatlan háttér
+    
+    threshold_info = f" Minimum él gyakoriság: {min_edge_frequency}" if min_edge_frequency > 0 else ""
+    ax.set_title(f"{threshold_info}", fontsize=50, fontweight='bold', y=1.02)
+    #ax.set_title(f"Leggyakrabban használt útvonalak a Gráfban{threshold_info}", fontsize=50, fontweight='bold', y=1.02)
     ax.axis('off')
 
 @safe_operation(default_return=None)
