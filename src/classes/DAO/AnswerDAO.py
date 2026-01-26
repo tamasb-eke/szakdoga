@@ -4,6 +4,7 @@ from model.database import Answer, Run
 from scripts.safe_operation import safe_operation
 from datetime import datetime
 from model.variables import AnswerColumn
+from typing import Optional
 
 class AnswerDAO:
    
@@ -14,12 +15,12 @@ class AnswerDAO:
     def get_all(
             self, 
             run_id:int, 
-            only_correct:bool = False, 
-            repeting:bool = False, 
-            invalid_word:bool = False, 
-            not_adjacency:bool = False,
-            too_short:bool = False, 
-            all_invalid:bool = False
+            only_correct:Optional[bool] = False, 
+            repeting:Optional[bool] = False, 
+            invalid_word:Optional[bool] = False, 
+            not_adjacency:Optional[bool] = False,
+            too_short:Optional[bool] = False, 
+            all_invalid:Optional[bool] = False
         ) -> list[dict]:
         """
         Return with all the answers based on a run_id in a list of dictionary
