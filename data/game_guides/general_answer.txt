@@ -1,11 +1,15 @@
 Imagine the following situation. You work for a big puzzle company and your boss gives you the following task. 
 You have to create 1000 puzzles. The rules of the assignment are as follows: 
-    The player is given two 3-letter English words. A start word and a finish word. The game is very simple. 
-    The player has to get from the start word to the target word by changing one letter at each step, and by getting an existing, meaningful English word. 
+- The player is given two 3-letter English words. A start word and a finish word. The game is very simple. 
+- The player has to get from the start word to the target word by changing one letter at each step, and by getting an existing, meaningful English word. 
+
+Let's look at an examples: 
+Starting word: FIT Target word: CAT Possible solution: FIT-FAT-CAT 
+Starting word: ADD Target word: AFT Possible solution: ADD-AID-AIR-AIT-AFT 
+Starting word: PAP Target word: FEN Possible solution: PAP-PEP-PEN-FEN 
+Starting word: FIG Target word: VAT Possible solution: FIG-FIT-FAT-VAT
 
 
-Let's look at an example. The start word: FIT, and the target word: CAR. Then a possible solution is FIT-FAT-CAT 
-
-
-Now it's your turn. Make 1000 of these puzzles and give me the solution to each one. 
-Please when you give me the puzzles and their answer don't give any other word, just the ones that need for the puzzles and their solve. 
+Now it's your turn. Make 100 of these puzzles and give me the solution to each one. 
+Please when you give me the puzzles and their answer don't give any other word, 
+just the ones that need for the puzzles and their solve. 
