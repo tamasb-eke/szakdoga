@@ -1,138 +1,136 @@
+from typing import List, Dict, Any, Union
 from sqlalchemy.orm import Session
-from sqlalchemy import insert, and_, delete
+from sqlalchemy import select, insert, update, delete, and_
 from model.database import Answer, Human, Run
+from model.schemas import HumanSchema
 from scripts.safe_operation import safe_operation
-from model.variables import HumanColumn
+from scripts.logger.logger import get_logger
 
 class HumanDAO:
-   
-    def __init__(self, session:Session):
+    def __init__(self, session: Session):
         self.session = session
+        self.logger = get_logger(__name__)
 
     @safe_operation(default_return=[])
-    def get_all(self) -> list:
-        """An SQL operation that return all the data from Human table in a list that contains dictionaries"""
-        q = self.session.query(Human).all()
-
-        return {
-            r.id : {
-                "games_played" : r.games_played
-            } for r in q
-        } if q else []
-
-    @safe_operation()
-    def get_all_questions(self, human_id: str) -> list[dict]:
+    def get_all(self) -> List[Dict[str, Any]]:
         """
-        An SQL query that returns with all question that a given Human have answered in a list of dictionaries
-        And only those where the chain_lenght is longer than 1
-        
-        :param human_id: The ID of the human you want to get it's questions
+        Returns all data from Human table as a list of dictionaries.
         """
-        q = (
-            self.session.query(Answer)
+        stmt = select(Human)
+        results = self.session.scalars(stmt).all()
+
+        return [HumanSchema.model_validate(r).model_dump() for r in results]
+
+    @safe_operation(default_return=[])
+    def get_all_questions(self, human_id: str) -> List[Dict[str, str]]:
+        """
+        Returns all questions (sourceWord, targetWord) a Human has answered
+        where the chain length is > 1.
+        """
+        stmt = (
+            select(Answer.sourceWord, Answer.targetWord)
             .join(Run, Run.id == Answer.run_id)
             .join(Human, Human.id == Run.person_id)
             .where(and_(Human.id == human_id, Answer.chain_length > 1))
-        ).all()
-
-        return [
-            {
-                "sourceWord" : r.sourceWord,
-                "targetWord" : r.targetWord
-            } for r in q
-        ]
-
-    @safe_operation()
-    def insert(self, human_id:str, games_played:int = 0) -> None:
-        """   
-        Insert into the Human table 
-        
-        :param ID: The ID of the Human
-        :param games_played: The number of games the Human has played
-        """
-        from scripts.logger.logger import get_logger
-        logger = get_logger(__name__)
-
-        data = (
-            insert(Human)
-            .values(
-                id=human_id,
-                games_played = games_played
-            )
         )
-
-        self.session.execute(data)
-        self.session.commit()
-
-        logger.info(f"{human_id} was inserted into human table with {games_played} played games")
+        
+        results = self.session.execute(stmt).mappings().all()
+        return [dict(r) for r in results]
 
     @safe_operation()
-    def update_games_played(self, human_id:str, played:int) -> None:
-        """Updates the games_played column. Played stores the new value of the number of games she/he has played"""
+    def insert(self, human_data: HumanSchema) -> None:
+        """   
+        Insert into the Human table.
+        Usage: dao.insert(HumanSchema(id="123", games_played=5))
+        """
+        stmt = insert(Human).values(**human_data.model_dump())
 
-        from scripts.logger.logger import get_logger
-        logger = get_logger(__name__)
-
-        q = self.session.query(Human).where(Human.id == human_id).first()
-        q.games_played = played
+        self.session.execute(stmt)
         self.session.commit()
 
-        logger.info(f"{human_id}'s games played was updated to {played}")
+        self.logger.info(f"{human_data.id} inserted with {human_data.games_played} games")
+
+    @safe_operation()
+    def update_field(self, answer_id: int, column: str, new_value: Any) -> None:
+        """
+        Updates a specific field dynamically.
+        Validates that 'column' is a real field in our schema before updating.
+        """
+
+        if column not in HumanSchema.model_fields:
+            self.logger.error(f"'{column}' is not a valid column in AnswerSchema.")
+            return
+
+        stmt = (
+            update(Human)
+            .where(Human.id == answer_id)
+            .values({column: new_value})
+        )
+        
+        self.session.execute(stmt)
+        self.session.commit()
+        
+        self.logger.info(f"ID {answer_id}: Updated '{column}' to '{new_value}'")
 
     @safe_operation(default_return=False)
-    def already_in_db(self, human_id:str) -> bool:
-        """Returns with a bool value based on if a human is already in the database or not"""
+    def already_in_db(self, human_id: str) -> bool:
+        """Checks if a human exists in the database."""
 
-        q = self.session.query(Human.id).where(Human.id == human_id).first()
+        stmt = select(1).where(Human.id == human_id)
+        result = self.session.scalar(stmt)
+        return result is not None
 
-        if q:
-            return True
-        return False
-    
     @safe_operation(default_return=False)
-    def already_answered(self, human_id:str, solution:str) -> bool:
-        """Returns with a bool value based on if a human is already answered a question"""
-
-        q = (
-            self.session.query(Human.id)
+    def already_answered(self, human_id: str, solution: str) -> bool:
+        """Checks if a human has already provided a specific solution."""
+        stmt = (
+            select(1)
             .join(Run, Run.person_id == Human.id)
             .join(Answer, Answer.run_id == Run.id)
             .where(and_(Human.id == human_id, Answer.chain == solution))
-            .first()
+            .limit(1)
         )
-
-        if q:
-            return True
-        return False
-    
-    @safe_operation()
-    def get_(self, human_id: int, column: HumanColumn) -> str:
-        """Get a specific column value from a Run record by ID."""
         
-        q = self.session.query(Human).filter(Human.id == human_id).first()
-
-        return getattr(q, column) if q else ""
-    
-    @safe_operation(default_return={})
-    def delete_less_than(self, amount:int=100) -> None:
-        """An SQL query that deletes from Human table those, that are less than the amount"""
-
-        self.session.execute(delete(Human).where(Human.games_played < amount))
-        self.session.commit()
-
-    
+        result = self.session.scalar(stmt)
+        return result is not None
 
     @safe_operation()
-    def delete(self, delete_id:str|list) -> None:
-        """An SQL query that deletes from Human table"""
-        from scripts.logger.logger import get_logger
-        logger = get_logger()
+    def get_column_value(self, human_id: str, column: str) -> str:
+        """
+        Get a specific column value. 
+        Replaces 'get_' and removes need for 'HumanColumn' Enum.
+        """
 
-        if isinstance(delete_id, str):
-            delete_id = [delete_id]
+        if column not in HumanSchema.model_fields:
+            self.logger.error(f"'{column}' is not a valid column in HumanSchema.")
+            return ""
 
-        self.session.query(Human).filter(Human.id.in_(delete_id)).delete(synchronize_session='fetch')
+        target_col = getattr(Human, column)
+        stmt = select(target_col).where(Human.id == human_id)
+        result = self.session.scalar(stmt)
+
+        return str(result) if result is not None else ""
+
+    @safe_operation(default_return={})
+    def delete_less_than(self, amount: int = 100) -> None:
+        """Deletes humans with fewer games_played than amount."""
+        stmt = delete(Human).where(Human.games_played < amount)
+        self.session.execute(stmt)
         self.session.commit()
 
-        for id_ in delete_id:
-            logger.info(f"{id_} was deleted from Human table")
+    @safe_operation()
+    def delete(self, delete_ids: Union[str, List[str]]) -> None:
+        """Deletes humans by ID."""
+        
+        if not delete_ids:
+            return
+        
+        if isinstance(delete_ids, str):
+            delete_ids = [delete_ids]
+
+        stmt = delete(Human).where(Human.id.in_(delete_ids))
+        self.session.execute(stmt)
+        self.session.commit()
+
+        for id_ in delete_ids:
+            self.logger.info(f"{id_} was deleted from Human table")

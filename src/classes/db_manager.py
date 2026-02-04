@@ -1,133 +1,136 @@
-from sqlalchemy import create_engine, and_
+from typing import List, Dict, Optional
+from sqlalchemy import create_engine, select, and_
 from sqlalchemy.orm import Session
 from model.database import Answer, Run, Human
+from model.schemas import *
 from .DAO.AnswerDAO import AnswerDAO
 from .DAO.llmDAO import LLMDAO
 from .DAO.TaskDAO import TaskDAO
 from .DAO.RunDAO import RunDAO
 from .DAO.HumanDAO import HumanDAO
+from scripts.safe_operation import safe_operation
+from scripts.basic_tools import get_enviromental_variable
+from scripts.logger.logger import get_logger
 
 
 class Database:
-   from scripts.safe_operation import safe_operation
-
    def __init__(self):
-      from scripts.basic_tools import get_enviromental_variable
       self.database_url = get_enviromental_variable('DATABASE_PATH')
       self.engine = create_engine(self.database_url)
       self.session = Session(self.engine)
-
       self.llm = LLMDAO(self.session)
       self.answer = AnswerDAO(self.session)
       self.task = TaskDAO(self.session)
       self.run = RunDAO(self.session)
       self.human = HumanDAO(self.session)
+      self.logger = get_logger(__name__)
 
    def close(self):
       """Close the database session"""
       self.session.close()
 
-   @safe_operation(default_return=[])
-   def create_questions(self, amount:int = 100) -> list[dict]:
-      """
-      Creates a question that was not been asked based on a person_id
-      """
-      q = (
-         self.session.query(Answer)
-         .limit(amount)
-         .all()
-      )
+   def __enter__(self):
+      """Allows use in 'with' statements"""
+      return self
 
-      return [
-         {
-            'sourceWord': r.sourceWord,
-            'targetWord': r.targetWord,
-         } for r in q
-      ] if q else []
-   
-   @safe_operation(default_return=True)
-   def already_asked(self, run_id:int, human_id:str) -> bool:
+   def __exit__(self, exc_type, exc_val, exc_tb):
+      """Automatically closes session on exit"""
+      self.close()
+
+   @safe_operation(default_return=[])
+   def create_questions(self, amount: int = 100) -> List[Dict[str, str]]:
       """
-      Checks if a question had been asked based on a human_id and a run_id
+      Fetches a list of source/target word pairs from existing answers.
+      Useful for generating test sets.
+      """
+
+      stmt = (
+         select(Answer.sourceWord, Answer.targetWord)
+         .limit(amount)
+      )
       
-      :param run_id: The ID of the run you want to get a question for
-      :param human_id: The ID of the human you want to get a questions
+      results = self.session.execute(stmt).mappings().all()
+      return [dict(r) for r in results]
+   
+   @safe_operation(default_return=False)
+   def already_asked(self, run_id: int, human_id: str) -> bool:
       """
-      q = (
-         self.session.query(Answer.sourceWord, Answer.targetWord)
+      Checks if a specific human has already contributed answers to a specific run.
+      """
+
+      stmt = (
+         select(1)
          .join(Run, Run.id == Answer.run_id)
          .join(Human, Human.id == Run.person_id)
          .where(and_(
-            Human.id == human_id,
-            Run.id == run_id
-            )
-         )
+               Human.id == human_id,
+               Run.id == run_id
+         ))
+         .limit(1)
       )
 
-      if q.first():
-         return True
-      return False
+      result = self.session.scalar(stmt)
+      return result is not None
    
    @safe_operation()
-   def evaluation(self, run_id:int) -> None:
-      """It's print out the result a run based on the run_id"""
+   def evaluation(self, run_id: int) -> None:
+      """Prints out the evaluation statistics for a specific run."""
       
-      from scripts.logger.logger import get_logger
-      logger = get_logger(__name__)
-      weighted_sum = 0
-      total_items = 0
+
       weighting = {
-         "Too short chain length" : 0.8,
-         "Repeting words" : 0.6,
-         "Not neighbours" : 0.4,
-         "Not in the acceptable .txt list" : 0.2,
-         "True" : 0
+         ValidationTypes.TOO_SHORT_CHAIN_LENGTH : 0.8,
+         ValidationTypes.REPEATING_WORDS : 0.6,
+         ValidationTypes.NOT_NEIGHBORS : 0.4,
+         ValidationTypes.NOT_IN_ACCAPTABLE_TXT_LIST : 0.2,
+         ValidationTypes.TRUE : 0
       }
 
+      is_successful = self.run.get_column_value(run_id, RunSchema.successful)
       
-      if self.run.get_(run_id, "successful").lower() == "false":
-         from scripts.logger.logger import get_logger
-         logger = get_logger(__name__)
-         logger.warning(f"The running was unsuccessful, this might affected results")
+      if str(is_successful).lower() == "false":
+         self.logger.warning(f"Run {run_id} was unsuccessful. Results may be affected.")
 
-      distribution = self.answer.get_all_error(run_id)
+      distribution = self.answer.get_validation_stats(run_id)
       total_answers = self.run.get_number_of_questions(run_id)
 
       print("\n\n")
-      print("*" * 50 + "ANSWERS" + "*" * 50)
-      print(f"Number of answers:{total_answers}  run id:{run_id}")
+      print("*" * 50 + " ANSWERS " + "*" * 50)
+      print(f"Number of answers: {total_answers} | Run ID: {run_id}")
       print("\n")
 
-      for key in distribution:
-         weighted_sum += distribution[key] * weighting[key]
-         total_items += distribution[key]
-         percentage = (distribution[key] / total_answers * 100) if total_answers else 0
-         print(f"{key}:{' ' * (50 - len(key))}{distribution[key]} ({percentage:.1f}%)")
-      
-      percentage = (weighted_sum / (total_items * 0.8)) * 100
-      print(f'\nError weight sum_percent {percentage:.2f}%')
+      weighted_sum = 0
+      total_items = 0
+
+      for validation_type, count in distribution.items():
+         weight = weighting.get(validation_type, 0)
+         weighted_sum += count * weight
+         total_items += count
+         percentage = (count / total_answers * 100) if total_answers > 0 else 0
          
+         print(f"{validation_type:<50} {count} ({percentage:.1f}%)")
+      
+      if total_items > 0:
+         final_score = (weighted_sum / (total_items * 0.8)) * 100
+      else:
+         final_score = 0.0
+         
+      print(f'\nError weight sum_percent: {final_score:.2f}%')
 
 
-
-# Global database instance
-_db_instance = None
+_db_instance: Optional[Database] = None
 
 def get_database() -> Database:
    """
-   Get the global database instance.
-   Creates it if it doesn't exist yet.
+   Get the global database instance. Creates it if it doesn't exist.
    """
    global _db_instance
    if _db_instance is None:
       _db_instance = Database()
    return _db_instance
 
-
 def close_database():
-   """Close the global database connection"""
+   """Close the global database connection."""
    global _db_instance
    if _db_instance is not None:
       _db_instance.close()
       _db_instance = None
-

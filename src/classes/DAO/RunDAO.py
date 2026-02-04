@@ -1,179 +1,181 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import insert, func, delete, or_
-from model.database import Run, Answer, Human, LLM, Task
-from scripts.safe_operation import safe_operation
+from typing import List, Dict, Any, Union
 from datetime import datetime
-from model.variables import RunColumn
+from sqlalchemy.orm import Session
+from sqlalchemy import select, insert, update, delete, func, or_
+from model.database import Run, Answer, Human, LLM, Task
+from model.schemas import RunSchema, ReadableRunSchema
+from scripts.safe_operation import safe_operation
+from scripts.logger.logger import get_logger
+
 class RunDAO:
-   
-    def __init__(self, session:Session):
+    def __init__(self, session: Session):
         self.session = session
-   
-    @safe_operation()
-    def get_all_(self, column: RunColumn = None, unique: bool = False, readable:bool = False) -> list|dict:
+        self.logger = get_logger(__name__)
+
+    @safe_operation(default_return=[])
+    def get_all(self) -> List[Dict[str, Any]]:
         """
-        An SQL query that returns all data from Run table.
-
-        :param column: you can choose which column you want to get
-        :param unique: If it is set to True, then only return unique values
-        :param readable: If it is set to true then it will return in readable form. So with llm name, and task description. Not their id
+        Returns all Run records as a list of dictionaries.
         """
-        
+        stmt = select(Run)
+        results = self.session.scalars(stmt).all()
+        return [RunSchema.model_validate(r).model_dump() for r in results]
 
-        if column:
-            query = self.session.query(getattr(Run, column))
-            
-            if unique:
-                query = query.distinct()
-                
-                result = query.all()
-                return [row[0] for row in result] if result else []
-
-            return query.all() if query else []
-            
-
-        elif readable:
-            q = (self.session.query(Run.id, Run.date, LLM.name, LLM.model, Task.name, Run.successful)
-                .select_from(Run)
-                .outerjoin(LLM, LLM.id == Run.llm_id)
-                .outerjoin(Task, Task.id == Run.task_id)
-                .all()
+    @safe_operation(default_return=[])
+    def get_all_readable(self) -> List[Dict[str, Any]]:
+        """
+        Returns a 'readable' view of runs, joined with LLM and Task names.
+        Replaces the old 'readable=True' flag.
+        """
+        stmt = (
+            select(
+                Run.id, 
+                Run.date, 
+                LLM.name, 
+                LLM.model, 
+                Task.name.label("task_name"), 
+                Run.successful
             )
-            return [[r[0], r[1], r[2], r[3], r[4], r[5]] for r in q] if q else []
-
-        q = self.session.query(Run).all()    
+            .select_from(Run)
+            .outerjoin(LLM, LLM.id == Run.llm_id)
+            .outerjoin(Task, Task.id == Run.task_id)
+        )
         
-        return {
-            r.id: {
-                'llm_id': r.llm_id,
-                'person_id': r.person_id,
-                'task_id': r.task_id,
-                'json_path': r.json_path,
-                'date': r.date,
-                'successful': r.successful
-            } for r in q
-        } if q else {}
-    
+        results = self.session.execute(stmt).mappings().all()
+        return [ReadableRunSchema.model_validate(r).model_dump() for r in results]
 
+    @safe_operation(default_return=[])
+    def get_values_by_column(self, column: str, unique: bool = False) -> List[Any]:
+        """
+        Returns a list of values from a specific column.
+        """
+        if column not in RunSchema.model_fields:
+            self.logger.error(f"'{column}' is not a valid column in RunSchema.")
+            return []
+
+        target_col = getattr(Run, column)
+        stmt = select(target_col)
+
+        if unique:
+            stmt = stmt.distinct()
+
+        results = self.session.scalars(stmt).all()
+        return list(results)
+
+    @safe_operation()
     def get_latest_id(self) -> int:
-        """Return with the id of the run that was last time"""
-        q = self.session.query(Run).order_by(Run.id.desc()).first()
+        """Return the ID of the most recent run."""
+        stmt = select(Run.id).order_by(Run.id.desc()).limit(1)
+        result = self.session.scalar(stmt)
         
-        if q:
-            return q.id
-        
-        # if no run.id we need to crash because it will later on cause problem. Better to crash soon
-        raise ValueError(f"Can not find lastest run_id from database")
-
+        if result is None:
+            raise ValueError("Cannot find latest run_id from database")
+        return result
 
     @safe_operation(default_return=0)
-    def get_number_of_questions(self, run_id:int) -> int | None:
-        """Return with the number of answers for a given run"""
-        query = (
-            self.session.query(func.count(Answer.id))
-            .filter(Answer.run_id == run_id)
+    def get_number_of_questions(self, run_id: int) -> int:
+        """Return the count of answers for a given run."""
+        stmt = (
+            select(func.count(Answer.id))
+            .where(Answer.run_id == run_id)
         )
-
-        return query.scalar()
+        return self.session.scalar(stmt) or 0
 
     @safe_operation()
-    def insert(self, llm_id:int=None, person_id:str = None, task_id:int = 1, json_path:str = 'data/saved_conversation', successful:str = 'False', date: str = datetime.today().strftime("%Y-%m-%d %H:%M")):
+    def insert(self, run_data: RunSchema) -> None:
         """   
-        Insert into the Run table 
-            Values:
-                :param llm_id: LLM ID (If we will store person data this should be None)
-                :param person_id: Person ID (If we will store LLM data this should be None)
-                :param task_id: ID of the task we currently executing
-                :param json_path: Path to the .json that stores the results
-                :param successful: Was the running succesful
-                :param date: The date of the running. Format YYYY-MM-DD HH:MM
-        Only the person_id or the llm_id should be an actual id, the other should be None
+        Insert into the Run table.
+        Usage: dao.insert(RunSchema(llm_id=1, ...))
         """
-        from scripts.logger.logger import get_logger
-        logger = get_logger(__name__)
+        if not run_data.date:
+            run_data.date = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-        data = (
-            insert(Run)
-            .values(
-                llm_id=llm_id,
-                person_id=person_id,
-                task_id=task_id,
-                json_path=json_path,
-                successful=successful,
-                date=date,
-
-            )
-        )
-
-        self.session.execute(data)
+        stmt = insert(Run).values(**run_data.model_dump())
+        
+        self.session.execute(stmt)
         self.session.commit()
-
-        logger.info(f"New row was inserted into Run table with id: {self.get_latest_id()}")
+        
+        self.logger.info(f"New row inserted into Run table")
 
     @safe_operation()
-    def update(self, run_id:int, value:str, json_path:bool = False) -> None:
+    def update_field(self, run_id: int, column: str, new_value: Any) -> None:
         """
-        Updates the successful column. Value stores the new value of the successful, based on the run_id
-        
-        :param run_id: The id of the run you want to update
-        :param value: The new value for successful or json_path
-        :param json_path: If it is set to True, then the value will be the new json_path, else the new successful status
+        Updates a specific field dynamically.
+        Replaces the old 'update(json_path=...)' method.
         """
-        
-        from scripts.logger.logger import get_logger
-        logger = get_logger(__name__)
+        if column not in RunSchema.model_fields:
+            self.logger.error(f"Invalid column '{column}' for update.")
+            return
 
-        q = self.session.query(Run).where(Run.id == run_id).first()
+        stmt = (
+            update(Run)
+            .where(Run.id == run_id)
+            .values({column: new_value})
+        )
         
-        if json_path:
-            q.json_path = value
-        else:
-            q.successful = value
-        
+        self.session.execute(stmt)
         self.session.commit()
-
-        logger.info(f"{run_id} was updated with {value}")
+        
+        self.logger.info(f"Run {run_id}: Updated '{column}' to '{new_value}'")
 
     @safe_operation(default_return=0)
-    def get_id(self, human_id:str) -> int:
-        """This is a little bit different, since it can be used the find an older run, based on the human_id"""
-
-        q = self.session.query(Run).filter(Run.person_id == human_id).first()
-        return q.person_id if q else 0
+    def get_person_id_by_run(self, human_id: str) -> str:
+        """
+        Finds the person_id associated with a run.
+        (Renamed from 'get_id' because that name was confusing—it took a human_id and returned a person_id?)
+        """
+        stmt = select(Run.person_id).where(Run.person_id == human_id).limit(1)
+        result = self.session.scalar(stmt)
+        return result if result else "0"
 
     @safe_operation()
-    def get_(self, run_id: int, column: RunColumn):
-        """Get a specific column value from a Run record by ID."""
-        
-        q = self.session.query(Run).filter(Run.id == run_id).first()
+    def get_column_value(self, run_id: int, column: str) -> str:
+        """Get a specific column value dynamically."""
+        if column not in RunSchema.model_fields:
+            self.logger.error(f"'{column}' is not a valid column.")
+            return ""
 
-        return getattr(q, column) if q else ""
-    
+        target_col = getattr(Run, column)
+        stmt = select(target_col).where(Run.id == run_id)
+        result = self.session.scalar(stmt)
+
+        return str(result) if result is not None else ""
+
     @safe_operation()
-    def delete_less_than(self, amount:int = 100) -> None:
-        """Delete those Runs where the human has less than the amount of games_played"""
-
+    def delete_less_than(self, amount: int = 100) -> None:
+        """
+        Delete Runs where the associated human has played fewer than 'amount' games,
+        OR where the run was not successful.
+        """
         subq = (
-            self.session.query(Run.id)
+            select(Run.id)
             .join(Human, Human.id == Run.person_id)
             .where(Human.games_played < amount)
         )
 
-        self.session.execute(delete(Run).where(or_(Run.id.in_(subq), Run.successful == 'False')))
+        stmt = delete(Run).where(
+            or_(
+                Run.id.in_(subq), 
+                Run.successful == 'False'
+            )
+        )
+        
+        self.session.execute(stmt)
         self.session.commit()
-
 
     @safe_operation()
-    def delete(self, delete_id:str|list) -> None:
-        """An SQL query that deletes from Run table"""
-        from scripts.logger.logger import get_logger
-        logger = get_logger()
+    def delete(self, delete_ids: Union[str, int, List[Union[str, int]]]) -> None:
+        """Deletes runs by ID."""
+        
+        if not delete_ids:
+            return
 
-        if isinstance(delete_id, str):
-            delete_id = [delete_id]
+        if not isinstance(delete_ids, list):
+            delete_ids = [delete_ids]
 
-        self.session.query(Run).filter(Run.id.in_(delete_id)).delete(synchronize_session='fetch')
+        stmt = delete(Run).where(Run.id.in_(delete_ids))
+        self.session.execute(stmt)
         self.session.commit()
 
-        for id_ in delete_id:
-            logger.info(f"{id_} was deleted from Run table")
+        for id_ in delete_ids:
+            self.logger.info(f"{id_} was deleted from Run table")

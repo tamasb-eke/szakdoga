@@ -1,116 +1,100 @@
+from typing import List, Dict, Any, Union
 from sqlalchemy.orm import Session
-from sqlalchemy import insert
+from sqlalchemy import select, insert, delete
 from model.database import LLM
+from model.schemas import LLMSchema
 from scripts.safe_operation import safe_operation
-from model.variables import LLMColumn
-
+from scripts.logger.logger import get_logger
 
 class LLMDAO:
-
-    def __init__(self, session:Session):
+    def __init__(self, session: Session):
         self.session = session
+        self.logger = get_logger(__name__)
 
-    @safe_operation(default_return={})
-    def get_all_(self, column: LLMColumn = None, unique: bool = False) -> dict|list:
+    @safe_operation(default_return=[])
+    def get_all(self) -> List[Dict[str, Any]]:
         """
-        SQL funtion that return all data from LLM table in a dictionary
+        Returns all LLM records as a list of dictionaries.
+        """
+        stmt = select(LLM)
+        results = self.session.scalars(stmt).all()
         
-        :param column: Only return all the data from the selected column
-        :param unique: Only return unique datas from the selected column
+        return [LLMSchema.model_validate(r).model_dump() for r in results]
+
+    @safe_operation(default_return=[])
+    def get_values_by_column(self, column: str, unique: bool = False) -> List[Any]:
         """
+        Returns a list of values from a specific column (e.g. get all model names).
+        Replaces the 'if column:' part of your old get_all_ function.
+        """
+        if column not in LLMSchema.model_fields:
+            self.logger.error(f"'{column}' is not a valid column in LLMSchema.")
+            return []
 
-        if column:
-            query = self.session.query(getattr(LLM, column))
-            if unique:
-                query = query.distinct()
-                result = query.all()
-                return [row[0] for row in result] if result else []
-            
-            return query.all() if query else []
+        target_col = getattr(LLM, column)
+        stmt = select(target_col)
 
-        q = self.session.query(LLM).all()
+        if unique:
+            stmt = stmt.distinct()
 
-        return {
-            r.id : {
-                'name' : r.name,
-                'model' : r.model,
-                'reasoning' : r.reasoning
-            } for r in q
-        } if q else {}
-    
-    @safe_operation()
-    def get_name(self, llm_id:int) -> str | None:
-        """SQL query that return's with tha name of a LLM base on it's ID"""
-        q = self.session.query(LLM.name).where(LLM.id == llm_id)
-
-        return q.first()[0] if q else None 
-
-    @safe_operation()
-    def get_model(self, llm_id:int) -> str|None:
-        """Return the model name, that can be used in the API call"""
-
-        q = self.session.query(LLM).where(LLM.id == llm_id).first()
-
-        return q.model if q else None 
-
+        results = self.session.scalars(stmt).all()
+        return list(results)
 
     @safe_operation(default_return=False)
-    def is_reasoning(self, llm_id:int) -> bool:
-        """Return with a bool value. Is it the LLM reasoning capable? True|False"""
-
-        q = self.session.query(LLM).where(LLM.id == llm_id).first()
-
-        if q and q.reasoning == "True":
-            return True
-        return False
-    
-    @safe_operation()
-    def insert(self, name:str, model:str, reasoning:str = "false"):
+    def is_reasoning(self, llm_id: int) -> bool:
         """
-        Insert into the LLM table
+        Checks if the LLM is reasoning capable. 
+        Handles the string "True"/"False" conversion robustly.
+        """
+        stmt = select(LLM.reasoning).where(LLM.id == llm_id)
+        result = self.session.scalar(stmt)
         
-        :param name: Name of the LLM
-        :param model: The model of the LLM
-        :param reasoning: If it is capable of the reasoning
-        """
-    
-        from scripts.logger.logger import get_logger
-        logger = get_logger(__name__)
+        return str(result).lower() == "true"
 
-        data = (
-            insert(LLM)
-            .values(
-                name = name,
-                model = model,
-                reasoning = reasoning
-            )
+    @safe_operation()
+    def insert(self, llm_data: LLMSchema) -> None:
+        """
+        Insert into the LLM table using a DTO.
+        """
+        stmt = insert(LLM).values(**llm_data.model_dump())
+        
+        self.session.execute(stmt)
+        self.session.commit()
+
+        self.logger.info(
+            f"Inserted LLM '{llm_data.name}' | Model: {llm_data.model} | Reasoning: {llm_data.reasoning}"
         )
 
-        self.session.execute(data)
-        self.session.commit()
-
-        logger.info(f"{name} was inserted into LLM table with the following parameter: model={model} | resoning={reasoning}")
-
     @safe_operation()
-    def delete(self, delete_id:str|list) -> None:
-        """An SQL query that deletes from LLM table"""
-        from scripts.logger.logger import get_logger
-        logger = get_logger()
-
-        if isinstance(delete_id, str):
-            delete_id = [delete_id]
-
-        self.session.query(LLM).filter(LLM.id.in_(delete_id)).delete(synchronize_session='fetch')
-        self.session.commit()
-
-        for id_ in delete_id:
-            logger.info(f"{id_} was deleted from LLM table")
-
-
-    @safe_operation()
-    def get_(self, llm_id: int, column: LLMColumn):
-        """Get a specific column value from a LLM record by ID."""
+    def delete(self, delete_ids: Union[str, int, List[Union[str, int]]]) -> None:
+        """Deletes LLMs by ID."""
         
-        q = self.session.query(LLM).filter(LLM.id == llm_id).first()
+        if not delete_ids:
+            return
+        
+        if not isinstance(delete_ids, list):
+            delete_ids = [delete_ids]
 
-        return getattr(q, column) if q else ""
+        stmt = delete(LLM).where(LLM.id.in_(delete_ids))
+        self.session.execute(stmt)
+        self.session.commit()
+
+        for id_ in delete_ids:
+            self.logger.info(f"{id_} was deleted from LLM table")
+
+    @safe_operation()
+    def get_column_value(self, llm_id: int, column: str) -> str:
+        """
+        Get a specific column value dynamically.
+        Replaces get_, get_name, and get_model.
+        """
+
+        if column not in LLMSchema.model_fields:
+            self.logger.error(f"'{column}' is not a valid column.")
+            return ""
+
+        target_col = getattr(LLM, column)
+        stmt = select(target_col).where(LLM.id == llm_id)
+        result = self.session.scalar(stmt)
+
+        return str(result) if result is not None else ""

@@ -4,18 +4,19 @@ import random
 from matplotlib.lines import Line2D
 from pathlib import Path
 from scripts.basic_tools import SAVE_PICTURE_PATH
+from model.schemas import ValidationTypes
 
 COLOR_MAP = {
-    'True': '#2ecc71',         
-    'Too short chain length': '#e74c3c',  
-    'Repeting words': '#f39c12',         
-    'Not neighbours': '#9b59b6',      
-    'Not in the acceptable .txt list': "#364cda",
-    'unknown': '#95a5a6'        
+    ValidationTypes.TRUE: '#2ecc71',         
+    ValidationTypes.TOO_SHORT_CHAIN_LENGTH: '#e74c3c',  
+    ValidationTypes.REPEATING_WORDS: '#f39c12',         
+    ValidationTypes.NOT_NEIGHBORS: '#9b59b6',      
+    ValidationTypes.NOT_IN_ACCAPTABLE_TXT_LIST: "#364cda",
+    ValidationTypes.UNKNOWN: '#95a5a6'        
 }
 
 
-def vizualize_game_data(game_data, filename:Path='szem_abra.png'):
+def vizualize_game_data(game_data:list[dict], filename:Path='szem_abra.png'):
     """
     Szem ábra kirajzolása és mentése.
     

@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+from model.schemas import ValidationTypes
 
 Base = declarative_base()
 
@@ -50,4 +51,4 @@ class Answer(Base):
     date = Column(Text, default=datetime.today().strftime("%Y-%m-%d %H:%M"))
     sourceWord = Column(Text, nullable=False)
     targetWord = Column(Text, nullable=False)
-    validation = Column(Text, nullable=False, default="True")
+    validation = Column(ValidationTypes, nullable=False, default="True")
