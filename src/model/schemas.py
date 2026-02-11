@@ -1,25 +1,25 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple
 from enum import Enum
-from pydantic import BaseModel, Field
 from abc import ABC, abstractmethod
 from datetime import datetime
+from pydantic import BaseModel, Field
 from scripts.logger.logger import get_logger
 
 
 
-class ValidationTypes(str, Enum):
-    TRUE = 'True'
-    TOO_SHORT_CHAIN_LENGTH = 'Too short chain length'
+class ValidationStatus(str, Enum):
+    VALID = 'True'
+    TOO_SHORT = 'Too short chain length'
     REPEATING_WORDS = 'Repeating words'
     NOT_NEIGHBORS = 'Not neighbors'
-    NOT_IN_ACCAPTABLE_TXT_LIST = 'Not in accaptable txt list'
+    INVALID_WORD = 'Not in acceptable txt list'
     UNKNOWN = 'Unknown'
+    SYNTAXERROR = 'SyntaxError'
 
     @classmethod
-    def all_errors(cls):
-        """Returns a list of all members except TRUE"""
-        return [member for member in cls if member != cls.TRUE]
-
+    def errors(cls) -> List['ValidationStatus']:
+        """Returns all error statuses (everything except VALID)."""
+        return [member for member in cls if member != cls.VALID]
 
 class AnswerSchema(BaseModel):
     id: int
@@ -28,15 +28,17 @@ class AnswerSchema(BaseModel):
     chain_length: int
     sourceWord: str
     targetWord: str
-    validation: ValidationTypes
+    validation: ValidationStatus 
     date: Optional[str] = None 
 
     class Config:
         from_attributes = True
 
+
 class HumanSchema(BaseModel):
     id: int
-    games_played: str = 0
+    games_played: int = 0 
+    
     class Config:
         from_attributes = True
 
@@ -45,7 +47,10 @@ class LLMSchema(BaseModel):
     id: int
     name: str
     model: str
-    reasoning: str = 'False'
+    reasoning: bool = False
+
+    class Config:
+        from_attributes = True
 
 
 class RunSchema(BaseModel):
@@ -54,17 +59,20 @@ class RunSchema(BaseModel):
     person_id: Optional[str] = None
     task_id: int = 1
     json_path: str = 'data/saved_conversation'
-    successful: str = 'False'
+    successful: bool = False
     date: Optional[str] = None 
+    
+    class Config:
+        from_attributes = True
 
 
 class ReadableRunSchema(BaseModel):
     id: int
     date: str
-    llm_name: Optional[str] = Field(alias="name") # Maps LLM.name
-    llm_model: Optional[str] = Field(alias="model") # Maps LLM.model
-    task_name: Optional[str] = Field(alias="task_name") # Maps Task.name
-    successful: str
+    llm_name: Optional[str] = Field(alias="name")
+    llm_model: Optional[str] = Field(alias="model")
+    task_name: Optional[str] = Field(alias="task_name")
+    successful: bool = False
 
     class Config:
         from_attributes = True
@@ -78,9 +86,11 @@ class TaskSchema(BaseModel):
     class Config:
         from_attributes = True
 
+
 class Message(BaseModel):
     role: str
     content: str
+
 
 class ConversationHistory(BaseModel):
     start_time: str = Field(default_factory=lambda: datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))

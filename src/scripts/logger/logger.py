@@ -1,8 +1,6 @@
 import logging
 from logging import Logger
 
-import logging
-
 class LevelBasedFormatter(logging.Formatter):
     def __init__(self):
         super().__init__()
