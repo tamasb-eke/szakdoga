@@ -1,22 +1,20 @@
 from scripts.safe_operation import safe_operation
-from classes.db_manager import get_database
+from classes.db_manager import Database
 from dateutil import parser, tz
 from scripts.basic_tools import clear_console
 from pathlib import Path
 from scripts.basic_tools import print_table, load_data
 from scripts.question_validation import semantic_validation
 
-def clear_unesecarry():
+def clear_unesecarry(db:Database, threshold:int=100):
     """
     A function that deletes all unnesecarry Answers, and Humans
         if:
             - Those Run's where the given human has not played a single game (from Run table)
-            - The Human games_played < 100 (from Human table)
+            - The Human games_played < threshold (from Human table)
             - The answers where the answer has no llm_id, or human_id. Basically has no owner
     
     """
-    threshold = 100
-    db = get_database()
     
     db.run.delete_less_than(amount=threshold)   # 1
     db.human.delete_less_than(amount=threshold) # 2
@@ -40,15 +38,13 @@ def convert_date(date:str) -> str:
     dt = parser.parse(date, tzinfos=tz_mapping)
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
-def get_manually_collected_json_path() -> Path:
+def get_manually_collected_json_path(db:Database) -> Path:
     """
     Get the path to the manually collected .json
     It lists all the .json files in the 'data/saved_conversation' folder, and the user can choose between them. 
     """
-    
-    db = get_database()
-    folder_paths = db.run.get_all_(column="json_path", unique=True)
     clear_console()
+    folder_paths = db.run.get_values_by_column(column="json_path", unique=True)
 
     for i, file in enumerate(folder_paths, start=1):
         print(f"{i}) {Path(file).name}")
@@ -58,7 +54,7 @@ def get_manually_collected_json_path() -> Path:
         try:
             choice = input("Please choose a number: ")
             if choice == 'e':
-                return 
+                return
             
             if 1 <= int(choice) <= len(folder_paths):
                 return Path(folder_paths[int(choice) - 1])

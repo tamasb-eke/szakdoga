@@ -2,7 +2,6 @@ import pandas as pd
 from classes.db_manager import get_database
 from scripts.basic_tools import SAVE_CSV_PATH
 from scripts.logger.logger import get_logger
-from scripts.question_validation import find_shortest_word_path
 from scripts.safe_operation import safe_operation
 from scripts.load_enviroment import APP_ENV
 
@@ -20,7 +19,7 @@ def export_to_scv(run_id:int) -> None:
     logger = get_logger()
     db = get_database()
     answers = db.answer.get_all(run_id=run_id)
-    llm_name = db.llm.get_(llm_id=db.run.get_(run_id,"llm_id"),column="name")
+    llm_name = db.llm.get_(llm_id=db.run.get_(run_id,"llm_id"), column="name")
     outputfilepath = SAVE_CSV_PATH / f"{run_id}_{llm_name}_{APP_ENV_}_output.csv"
     
     print(f"Exporting to {outputfilepath} ....")
