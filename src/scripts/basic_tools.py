@@ -6,7 +6,6 @@ import json
 from prettytable import PrettyTable
 from typing import List, Any
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SAVED_CONVERSATION_PATH = Path(ROOT/'data/saved_conversation')
 GMPL_PATH = Path(ROOT/'data/other_data_files/word_morph_network.gml')
@@ -37,7 +36,7 @@ def load_data(path:Path):
         data = json.load(f)
     return data
 
-def print_table(header_names: List[str], datas: List[List[Any]]) -> None:
+def print_table(header_names: List[str], datas: List[List[Any]], columns:bool=False) -> None:
     """A simple function that pretty print the tables
 
     :param header_names: The names that are goint to be the headers
@@ -51,8 +50,12 @@ def print_table(header_names: List[str], datas: List[List[Any]]) -> None:
         print("There is no data to print out as a table")
         return
 
-    for row in datas:
-        table.add_row(["" if val is None else val for val in row])
+    if not columns:
+        for row in datas:
+            table.add_row(["" if val is None else val for val in row])
+    else:
+        for column in datas:
+            table.add_column(column)
 
     table.junction_char = '+'
     table.horizontal_char = '-'
