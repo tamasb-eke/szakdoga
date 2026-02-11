@@ -98,7 +98,7 @@ class HumanDAO:
     def get_column_value(self, human_id: str, column: str) -> str:
         """
         Get a specific column value. 
-        Replaces 'get_' and removes need for 'HumanColumn' Enum.
+        Replaces get_() and removes need for 'HumanColumn' Enum.
         """
 
         if column not in HumanSchema.model_fields:

@@ -2,7 +2,6 @@ from typing import List, Dict, Optional
 from sqlalchemy import create_engine, select, and_
 from sqlalchemy.orm import Session
 from model.database import Answer, Run, Human
-from model.schemas import *
 from .DAO.AnswerDAO import AnswerDAO
 from .DAO.llmDAO import LLMDAO
 from .DAO.TaskDAO import TaskDAO
@@ -11,6 +10,7 @@ from .DAO.HumanDAO import HumanDAO
 from scripts.safe_operation import safe_operation
 from scripts.basic_tools import get_enviromental_variable
 from scripts.logger.logger import get_logger
+from model.schemas import ValidationStatus, RunSchema
 
 
 class Database:
@@ -78,11 +78,11 @@ class Database:
       
 
       weighting = {
-         ValidationTypes.TOO_SHORT_CHAIN_LENGTH : 0.8,
-         ValidationTypes.REPEATING_WORDS : 0.6,
-         ValidationTypes.NOT_NEIGHBORS : 0.4,
-         ValidationTypes.NOT_IN_ACCAPTABLE_TXT_LIST : 0.2,
-         ValidationTypes.TRUE : 0
+         ValidationStatus.TOO_SHORT_CHAIN_LENGTH : 0.8,
+         ValidationStatus.REPEATING_WORDS : 0.6,
+         ValidationStatus.NOT_NEIGHBORS : 0.4,
+         ValidationStatus.NOT_IN_ACCAPTABLE_TXT_LIST : 0.2,
+         ValidationStatus.TRUE : 0
       }
 
       is_successful = self.run.get_column_value(run_id, RunSchema.successful)

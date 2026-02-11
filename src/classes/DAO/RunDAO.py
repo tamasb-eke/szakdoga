@@ -101,7 +101,7 @@ class RunDAO:
     def update_field(self, run_id: int, column: str, new_value: Any) -> None:
         """
         Updates a specific field dynamically.
-        Replaces the old 'update(json_path=...)' method.
+        Replaces the old update(json_path=...) method.
         """
         if column not in RunSchema.model_fields:
             self.logger.error(f"Invalid column '{column}' for update.")
@@ -122,7 +122,7 @@ class RunDAO:
     def get_person_id_by_run(self, human_id: str) -> str:
         """
         Finds the person_id associated with a run.
-        (Renamed from 'get_id' because that name was confusing—it took a human_id and returned a person_id?)
+        (Renamed from get_id() because that name was confusing—it took a human_id and returned a person_id?)
         """
         stmt = select(Run.person_id).where(Run.person_id == human_id).limit(1)
         result = self.session.scalar(stmt)
