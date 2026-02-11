@@ -1,167 +1,186 @@
-from classes.api import get_chatbot, Google, Anthropic, Openai
-from scripts.safe_operation import safe_operation
 from classes.db_manager import get_database
-from scripts.basic_tools import print_table, clear_console
-from scripts.question_validation import syntactic_validation, semantic_validation
-from itertools import zip_longest
-from typing import Union
 from pathlib import Path
+from model.schemas import LLMSchema, TaskSchema, AnswerSchema
+from typing import List
+from scripts.basic_tools import clear_console
+from scripts import safe_operation
+from classes.api import Chatbot, get_chatbot
+from scripts.question_validation import syntactic_validation, semantic_validation
+from scripts.logger.logger import get_logger
+
+class ChatbotCommunication():
+
+    def __init__(self):
+        self.llm:LLMSchema = None
+        self.task:TaskSchema = None
+        self.number_of_questions = None
+        self.db = get_database()
+
+    def _map_db_name_to_provider(self) -> str:
+        """Maps database LLM names to Chatbot provider keys."""
+        name = self.llm.name.lower()
+        if "gpt" in name or "openai" in name:
+            return "openai"
+        elif "claude" in name or "anthropic" in name:
+            return "anthropic"
+        elif "gemini" in name or "google" in name:
+            return "google"
+        return "unknown"
+
+    def get_user_configuration(self) -> None:
+            """
+            Get all available llm, and task
+            """
+
+            llms: List[LLMSchema] = self.db.llm.get_all()
+            tasks: List[TaskSchema] = self.db.task.get_all()
+            llm_map = {llm.id: llm for llm in llms}
+            task_map = {task.id: task for task in tasks}
+
+            while True:
+                clear_console() 
+                print("--- ChatBot Configuration Setup ---")
+
+                llm_input = input("Enter LLM ID: ").strip()
+                if not llm_input.isdigit() or int(llm_input) not in llm_map:
+                    print(f"Invalid LLM ID: {llm_input}. Press Enter to retry.")
+                    input()
+                    continue
+                
+                task_input = input("Enter Task ID: ").strip()
+                if not task_input.isdigit() or int(task_input) not in task_map:
+                    print(f"Invalid Task ID: {task_input}. Press Enter to retry.")
+                    input()
+                    continue
+
+                count_input = input("Enter number of questions (default 100): ").strip()
+                if not count_input:
+                    count_input = 100
+                elif not count_input.isdigit():
+                    print(f"Invalid number: {count_input}. Press Enter to retry.")
+                    input()
+                    continue
+
+                self.llm = llm_map[int(llm_input)]
+                self.task_id = task_map[int(task_input)]
+                self.number_of_questions = int(count_input)
+                break
 
 
-def initialize_chatbot_communication():
-    """"""
 
-    db = get_database()
-
-    llms = db.llm.get_all_()
-    tasks = db.task.get_all()
-
-    llm = [[r[0],r[1]['name'], r[1]['model'], r[1]['reasoning']] for r in llms.items()]    
-    task = [[r[0],r[1]['name'], r[1]['description']] for r in tasks.items()]
-
-    combined = [
-        l + t 
-        for l, t in zip_longest(llm, task, fillvalue=[None, None, None])
-    ]
-    clear_console()
-
-
-    while True:
-        
-        print("Please give the following parameters:")
-        print("1. Which LLM dou you want to use")
-        print("2. Which task do you currently doing")
-        print("3. How many question do you want to make? (default is 100)")
-        print("Please only give the LLM and Task ID")
-        print("\n           Currently available in database")
-        
-        print_table(
-            header_names=['LLM ID','LLM name', 'LLM model', 'LLM reasoning', 'Task ID', 'Task name', 'Task description'],
-            datas=combined
-        )
-
-        llm_id = int(input("\nPlease give LLM ID: "))
-        if not llm_id in llms:
-            clear_console()
-            print(f"\nThe given llm_id ({llm_id}) was not recognisable. Please choose another one.\n")
-            continue
-        task_id = int(input("Please give Task ID: "))
-        if not task_id in tasks:
-            clear_console()
-            print(f"\nThe given task_id ({task_id}) was not recognisable. Please choose another one.\n")
-            continue
-        number_of_questions = input("Enter the number of games to play: ")
-        if not number_of_questions.isdigit():
-            clear_console()
-            print(f"\nThe given number of question ({number_of_questions}) was not a number. Please Try again.\n")
-            continue
-
-        else:
-            return llm_id, task_id, int(number_of_questions)
-    
 
 @safe_operation()
-def chat_llm_api(run_id:int, chatbot:Union[Openai, Anthropic, Google], model:str, reasoning:bool = False, number_of_questions: int = 100) -> None:
+def manual_game_conversation(chatbot: Chatbot, provider: str, model: str, reasoning: bool) -> None:
     """
-    A function that handles the chatbot conversation
+    Loops until the Chatbot confirms it understands the game rules.
     """
+    bot_response = ""
+    success_phrases = ["I understand the game", "I understand the game."]
 
+    while bot_response.strip() not in success_phrases:
+        user_input = input("\n[USER]: ").strip()
+
+        if Path(user_input).is_file(): 
+            with open(Path(user_input), 'r', encoding='utf-8') as f:
+                user_input = f.read()
+
+        bot_response = chatbot.send_message(
+            provider_name=provider,
+            message=user_input,
+            model=model,
+            reasoning=reasoning
+        )
+        
+        print(f"[Chatbot]: {bot_response}")
+
+        if bot_response.strip() in success_phrases:
+            return
+
+@safe_operation()
+def run_chat_session(
+        run_id: int, 
+        chatbot: Chatbot,
+        provider: str, 
+        model: str, 
+        reasoning: bool, 
+        number_of_questions: int
+    ) -> None:
+    """
+    Orchestrates the actual questioning loop.
+    """
     db = get_database()
-    answer = ''
-    print('\n--- Conversation started ---')
-    # First conversation about the game rules
-    while answer != "I understand the game" and answer != "I understand the game.":
-        game_description = input("[USER]: ")
-        
-        temp = game_description
-        if Path(game_description).is_file():
-            with open(Path(game_description), 'r') as f:
-                game_description = f.read()
+    logger = get_logger(__name__)
+    print('\n--- Game Rule Initialization ---')
+    print("Please provide the game description (or path to a .txt file).")
+    manual_game_conversation(chatbot, provider, model, reasoning)
 
-        answer = chatbot.interact(
-            message=game_description,
-            model=model,
-            reasoning=reasoning
-        )
 
-        print(f"[Chatbot]: {answer}")
-        
-    #Automatic conversation
+    print(f"\n--- Starting {number_of_questions} Questions ---")
     questions = db.create_questions(amount=number_of_questions)
-    i = 1
-    for question in questions:
+
+    for i, question in enumerate(questions, 1):
+        prompt = f"sourceWord: {question['sourceWord']}, targetWord: {question['targetWord']}."
         
-    
-        answer = chatbot.interact(
-            message=f"sourceWord: {question['sourceWord']}, targetWord: {question['targetWord']}. ",
+        answer = chatbot.send_message(
+            provider_name=provider,
+            message=prompt,
             model=model,
             reasoning=reasoning
         )
-                
+        
         if syntactic_validation(answer):
             validation_message = semantic_validation(answer)
             
             db.answer.insert(
-                run_id=run_id,
-                chain=answer,
-                chain_length= len(answer.split('-')),
-                sourceword=question['sourceWord'],
-                targetword=question['targetWord'],
-                validation_message=validation_message
-            )
-
-            print(f"({i}/{number_of_questions}) source word: {question['sourceWord']}, target word: {question['targetWord']}, validation {validation_message}")
-
-
-        else:
-            while answer != "I understand the game" and answer != "I understand the game.":
-                print(f"[Chatbot]: {answer}")
-                game_description = input("[USER]: ")
-                answer = chatbot.interact(
-                    model=model,
-                    message=game_description, 
-                    reasoning=reasoning
+                AnswerSchema(
+                    run_id=run_id,
+                    chain=answer,
+                    chain_length=len(answer.split('-')),
+                    sourceword=question['sourceWord'],
+                    targetword=question['targetWord'],
+                    validation_message=validation_message
                 )
-                
-        i += 1
-            
-    print('\n --- Conversation finished ---')
-    chat = get_chatbot()
-    json_path = chat.save_json(run_id=run_id, return_path=True)
-    db.run.update(run_id=run_id, value=str(json_path), json_path=True)
-    db.run.update(run_id=run_id, value="True")
-    db.evaluation(run_id=run_id)
+            )
+            print(f"({i}/{number_of_questions}) {question['sourceWord']} -> {question['targetWord']} | Result: {validation_message}")
+        
+        else:
+            manual_game_conversation(chatbot, provider, model, reasoning)
 
+
+    print('\n--- Conversation Finished ---')
+    json_path = chatbot.save_history(run_id=run_id, return_path=True)
+    
+    if json_path:
+        db.run.update_field(run_id=run_id, column='json_path', new_value=str(json_path))
+        db.run.update_field(run_id=run_id, column='successful', new_value='True')
+        db.evaluation(run_id=run_id)
+    else:
+        logger.error("Failed to save conversation history JSON.")
 
 def start_conversation() -> None:
-    """First it initialize the running parameters for the conversation, then makes an LLM conversation interface"""
-
-    llm_id, task_id, number_of_questions = initialize_chatbot_communication()
-    db = get_database()
+    """
+    Main entry point: Setup -> Database -> Chat Loop
+    """
     
-    chat_instance = db.llm.get_(llm_id=llm_id, column="name").lower()
-
-    if chat_instance == "chatgpt":
-        chatbot = get_chatbot()
-        ch = chatbot.chatgpt
-    elif chat_instance == "claude":
-        chatbot = get_chatbot()
-        ch = chatbot.claude
-    elif chat_instance == "gemini":
-        chatbot = get_chatbot()
-        ch = chatbot.gemini
+    conversation: ChatbotCommunication = ChatbotCommunication()
+    conversation.get_user_configuration()
+    
+    db = get_database()
 
     db.run.insert(
-        llm_id = llm_id,
-        task_id = task_id,
+        llm_id=conversation.llm.id,
+        task_id=conversation.task.id,
+    )
+    current_run_id = db.run.get_latest_id()
+    chatbot = get_chatbot()
+    
+    run_chat_session(
+        run_id=current_run_id,
+        chatbot=chatbot,
+        provider=conversation._map_db_name_to_provider(),
+        model=conversation.llm.model,
+        reasoning=conversation.llm.reasoning,
+        number_of_questions=conversation.number_of_questions
     )
 
-    chat_llm_api(
-        run_id=db.run.get_latest_id(),
-        chatbot = ch,
-        model = db.llm.get_(llm_id=llm_id, column="model"),
-        reasoning = True if db.llm.get_(llm_id=llm_id, column="reasoning") == 'True' else False,
-        number_of_questions=number_of_questions
-    )
-
-    input("\nPlease press any key to return to main menu")
+    input("\nSession complete. Press any key to return to main menu...")

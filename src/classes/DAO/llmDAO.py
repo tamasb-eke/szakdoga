@@ -12,20 +12,19 @@ class LLMDAO:
         self.logger = get_logger(__name__)
 
     @safe_operation(default_return=[])
-    def get_all(self) -> List[Dict[str, Any]]:
+    def get_all(self) -> List[LLMSchema]:
         """
         Returns all LLM records as a list of dictionaries.
         """
         stmt = select(LLM)
         results = self.session.scalars(stmt).all()
         
-        return [LLMSchema.model_validate(r).model_dump() for r in results]
+        return [LLMSchema.model_validate(r) for r in results]
 
     @safe_operation(default_return=[])
-    def get_values_by_column(self, column: str, unique: bool = False) -> List[Any]:
+    def get_(self, column: str, unique: bool = False) -> List[Any]|str:
         """
         Returns a list of values from a specific column (e.g. get all model names).
-        Replaces the 'if column:' part of your old get_all_ function.
         """
         if column not in LLMSchema.model_fields:
             self.logger.error(f"'{column}' is not a valid column in LLMSchema.")
@@ -38,7 +37,7 @@ class LLMDAO:
             stmt = stmt.distinct()
 
         results = self.session.scalars(stmt).all()
-        return list(results)
+        return list(results) if len(list(results)) > 0 else results[0]
 
     @safe_operation(default_return=False)
     def is_reasoning(self, llm_id: int) -> bool:
