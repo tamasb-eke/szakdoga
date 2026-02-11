@@ -1,8 +1,8 @@
-from typing import Optional, List, Dict, Tuple
+from typing import Optional, List, Dict, Literal, Any
 from enum import Enum
 from abc import ABC, abstractmethod
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from scripts.logger.logger import get_logger
 
 
@@ -36,7 +36,7 @@ class AnswerSchema(BaseModel):
 
 
 class HumanSchema(BaseModel):
-    id: int
+    id: str
     games_played: int = 0 
     
     class Config:
@@ -88,9 +88,36 @@ class TaskSchema(BaseModel):
 
 
 class Message(BaseModel):
-    role: str
+    role: Literal["user", "assistant"]
     content: str
 
+    class Config:
+        extra = "forbid" 
+
+    @model_validator(mode='before')
+    @classmethod
+    def normalize_legacy_data(cls, data: Any) -> Any:
+        """
+        Intercepts raw data to normalize keys ('say' -> 'content') 
+        and values ('Prompt' -> 'user').
+        """
+        if not isinstance(data, dict):
+            return data
+        
+        if 'say' in data:
+            data['content'] = data.pop('say')
+        
+        role_mapping = {
+            "Prompt": "user",
+            "Response": "assistant",
+            "user": "user",
+            "assistant": "assistant"
+        }
+        
+        if 'role' in data and data['role'] in role_mapping:
+            data['role'] = role_mapping[data['role']]
+            
+        return data
 
 class ConversationHistory(BaseModel):
     start_time: str = Field(default_factory=lambda: datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
@@ -116,3 +143,23 @@ class BaseLLMProvider(ABC):
     @abstractmethod
     def interact(self, history: ConversationHistory, model: str, reasoning: bool, temperature: Optional[float]) -> str:
         pass
+
+
+class GameEntry(BaseModel):
+    """Represents the innermost game data"""
+    chain: str
+    chain_length: int
+    raw_date: str = Field(alias="date") 
+    language: str
+    source_word: str = Field(alias="sourceWord") 
+    target_word: str = Field(alias="targetWord")
+    time_in_sec: int
+    wordlength: int
+
+
+class GameLogsExport(BaseModel):
+    """
+    Represents the entire JSON structure.
+    Structure: GameLogs -> PlayerID (str) -> GameID (str) -> GameEntry
+    """
+    GameLogs: Dict[str, Dict[str, GameEntry]]
