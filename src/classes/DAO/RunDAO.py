@@ -40,7 +40,6 @@ class RunDAO:
             .outerjoin(LLM, LLM.id == Run.llm_id)
             .outerjoin(Task, Task.id == Run.task_id)
         )
-        
         results = self.session.execute(stmt).mappings().all()
         return [ReadableRunSchema.model_validate(r) for r in results]
 
@@ -52,13 +51,12 @@ class RunDAO:
         if column not in RunSchema.model_fields:
             self.logger.error(f"'{column}' is not a valid column in RunSchema.")
             return []
-
+        
         target_col = getattr(Run, column)
         stmt = select(target_col)
-
         if unique:
             stmt = stmt.distinct()
-
+                
         results = self.session.scalars(stmt).all()
         return list(results)
 
@@ -67,7 +65,6 @@ class RunDAO:
         """Return the ID of the most recent run."""
         stmt = select(Run.id).order_by(Run.id.desc()).limit(1)
         result = self.session.scalar(stmt)
-        
         if result is None:
             raise ValueError("Cannot find latest run_id from database")
         return result
@@ -91,10 +88,8 @@ class RunDAO:
             run_data.date = datetime.now().strftime("%Y-%m-%d %H:%M")
 
         stmt = insert(Run).values(**run_data.model_dump())
-        
         self.session.execute(stmt)
         self.session.commit()
-        
         self.logger.info(f"New row inserted into Run table")
 
     @safe_operation()
@@ -112,10 +107,8 @@ class RunDAO:
             .where(Run.id == run_id)
             .values({column: new_value})
         )
-        
         self.session.execute(stmt)
         self.session.commit()
-        
         self.logger.info(f"Run {run_id}: Updated '{column}' to '{new_value}'")
 
     @safe_operation(default_return=0)
@@ -138,7 +131,6 @@ class RunDAO:
         target_col = getattr(Run, column)
         stmt = select(target_col).where(Run.id == run_id)
         result = self.session.scalar(stmt)
-
         return str(result) if result is not None else ""
 
     @safe_operation()
@@ -152,14 +144,12 @@ class RunDAO:
             .join(Human, Human.id == Run.person_id)
             .where(Human.games_played < amount)
         )
-
         stmt = delete(Run).where(
             or_(
                 Run.id.in_(subq), 
                 Run.successful == 'False'
             )
         )
-        
         self.session.execute(stmt)
         self.session.commit()
 
@@ -176,6 +166,5 @@ class RunDAO:
         stmt = delete(Run).where(Run.id.in_(delete_ids))
         self.session.execute(stmt)
         self.session.commit()
-
         for id_ in delete_ids:
             self.logger.info(f"{id_} was deleted from Run table")

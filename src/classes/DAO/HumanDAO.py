@@ -18,7 +18,6 @@ class HumanDAO:
         """
         stmt = select(Human)
         results = self.session.scalars(stmt).all()
-
         return [HumanSchema.model_validate(r) for r in results]
 
     @safe_operation(default_return=[])
@@ -33,7 +32,6 @@ class HumanDAO:
             .join(Human, Human.id == Run.person_id)
             .where(and_(Human.id == human_id, Answer.chain_length > 1))
         )
-        
         results = self.session.execute(stmt).mappings().all()
         return [dict(r) for r in results]
 
@@ -44,10 +42,8 @@ class HumanDAO:
         Usage: dao.insert(HumanSchema(id="123", games_played=5))
         """
         stmt = insert(Human).values(**human_data.model_dump())
-
         self.session.execute(stmt)
         self.session.commit()
-
         self.logger.info(f"{human_data.id} inserted with {human_data.games_played} games")
 
     @safe_operation()
@@ -66,16 +62,13 @@ class HumanDAO:
             .where(Human.id == answer_id)
             .values({column: new_value})
         )
-        
         self.session.execute(stmt)
         self.session.commit()
-        
         self.logger.info(f"ID {answer_id}: Updated '{column}' to '{new_value}'")
 
     @safe_operation(default_return=False)
     def already_in_db(self, human_id: str) -> bool:
         """Checks if a human exists in the database."""
-
         stmt = select(1).where(Human.id == human_id)
         result = self.session.scalar(stmt)
         return result is not None
@@ -90,7 +83,6 @@ class HumanDAO:
             .where(and_(Human.id == human_id, Answer.chain == solution))
             .limit(1)
         )
-        
         result = self.session.scalar(stmt)
         return result is not None
 
@@ -108,7 +100,6 @@ class HumanDAO:
         target_col = getattr(Human, column)
         stmt = select(target_col).where(Human.id == human_id)
         result = self.session.scalar(stmt)
-
         return str(result) if result is not None else ""
 
     @safe_operation(default_return={})
@@ -131,6 +122,5 @@ class HumanDAO:
         stmt = delete(Human).where(Human.id.in_(delete_ids))
         self.session.execute(stmt)
         self.session.commit()
-
         for id_ in delete_ids:
             self.logger.info(f"{id_} was deleted from Human table")

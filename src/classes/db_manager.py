@@ -78,11 +78,11 @@ class Database:
       
 
       weighting = {
-         ValidationStatus.TOO_SHORT_CHAIN_LENGTH : 0.8,
+         ValidationStatus.TOO_SHORT : 0.8,
          ValidationStatus.REPEATING_WORDS : 0.6,
          ValidationStatus.NOT_NEIGHBORS : 0.4,
-         ValidationStatus.NOT_IN_ACCAPTABLE_TXT_LIST : 0.2,
-         ValidationStatus.TRUE : 0
+         ValidationStatus.INVALID_WORD : 0.2,
+         ValidationStatus.VALID : 0
       }
 
       is_successful = self.run.get_column_value(run_id, RunSchema.successful)

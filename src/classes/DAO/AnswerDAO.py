@@ -24,7 +24,6 @@ class AnswerDAO:
         Returns a list of dictionaries (serialized Pydantic models).
         """
         q = select(Answer).where(Answer.run_id == run_id)
-        
         if validation_filters:
             q = q.where(Answer.validation.in_(validation_filters))
             
@@ -43,7 +42,6 @@ class AnswerDAO:
             .group_by(Answer.validation)
             .order_by(func.count(Answer.validation).desc())
         )
-        
         results = self.session.execute(stmt).all()
         return {validation: count for validation, count in results}
 
@@ -60,10 +58,8 @@ class AnswerDAO:
             answer_data.date = datetime.now().strftime("%Y-%m-%d %H:%M")
 
         stmt = insert(Answer).values(**answer_data.model_dump())
-
         self.session.execute(stmt)
         self.session.commit()
-
         self.logger.info(f"Chain '{answer_data.chain}' inserted into Answer table")
 
     @safe_operation()
@@ -106,11 +102,9 @@ class AnswerDAO:
             self.logger.error(f"'{column}' is not a valid column.")
             return ""
 
-
         target_col = getattr(Answer, column)
         stmt = select(target_col).where(Answer.id == answer_id)
         result = self.session.scalar(stmt)
-        
         return str(result) if result is not None else ""
 
     @safe_operation()
@@ -132,5 +126,4 @@ class AnswerDAO:
         
         self.session.execute(stmt)
         self.session.commit()
-        
         self.logger.info(f"ID {answer_id}: Updated '{column}' to '{new_value}'")

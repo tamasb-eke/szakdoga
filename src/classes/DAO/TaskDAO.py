@@ -27,10 +27,8 @@ class TaskDAO:
         Usage: dao.insert(TaskCreateDTO(name="New Task", description="..."))
         """
         stmt = insert(Task).values(**task_data.model_dump())
-
         self.session.execute(stmt)
         self.session.commit()
-
         self.logger.info(f"Task '{task_data.name}' was inserted into Task table")
 
     @safe_operation()
@@ -46,7 +44,6 @@ class TaskDAO:
         stmt = delete(Task).where(Task.id.in_(delete_ids))
         self.session.execute(stmt)
         self.session.commit()
-
         for id_ in delete_ids:
             self.logger.info(f"{id_} was deleted from Task table")
 
@@ -64,5 +61,4 @@ class TaskDAO:
         target_col = getattr(Task, column)
         stmt = select(target_col).where(Task.id == task_id)
         result = self.session.scalar(stmt)
-
         return str(result) if result is not None else ""

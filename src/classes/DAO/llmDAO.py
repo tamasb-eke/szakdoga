@@ -18,7 +18,6 @@ class LLMDAO:
         """
         stmt = select(LLM)
         results = self.session.scalars(stmt).all()
-        
         return [LLMSchema.model_validate(r) for r in results]
 
     @safe_operation(default_return=[])
@@ -32,7 +31,6 @@ class LLMDAO:
 
         target_col = getattr(LLM, column)
         stmt = select(target_col)
-
         if unique:
             stmt = stmt.distinct()
 
@@ -47,7 +45,6 @@ class LLMDAO:
         """
         stmt = select(LLM.reasoning).where(LLM.id == llm_id)
         result = self.session.scalar(stmt)
-        
         return str(result).lower() == "true"
 
     @safe_operation()
@@ -56,13 +53,9 @@ class LLMDAO:
         Insert into the LLM table using a DTO.
         """
         stmt = insert(LLM).values(**llm_data.model_dump())
-        
         self.session.execute(stmt)
         self.session.commit()
-
-        self.logger.info(
-            f"Inserted LLM '{llm_data.name}' | Model: {llm_data.model} | Reasoning: {llm_data.reasoning}"
-        )
+        self.logger.info(f"Inserted LLM '{llm_data.name}' | Model: {llm_data.model} | Reasoning: {llm_data.reasoning}")
 
     @safe_operation()
     def delete(self, delete_ids: Union[str, int, List[Union[str, int]]]) -> None:
@@ -77,7 +70,6 @@ class LLMDAO:
         stmt = delete(LLM).where(LLM.id.in_(delete_ids))
         self.session.execute(stmt)
         self.session.commit()
-
         for id_ in delete_ids:
             self.logger.info(f"{id_} was deleted from LLM table")
 
@@ -91,9 +83,8 @@ class LLMDAO:
         if column not in LLMSchema.model_fields:
             self.logger.error(f"'{column}' is not a valid column.")
             return ""
-
+        
         target_col = getattr(LLM, column)
         stmt = select(target_col).where(LLM.id == llm_id)
         result = self.session.scalar(stmt)
-
         return str(result) if result is not None else ""
