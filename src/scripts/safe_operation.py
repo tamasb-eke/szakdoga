@@ -1,8 +1,13 @@
 import functools
-from typing import Any, Callable, Union, Type, Tuple
+from typing import Any, Callable, Union, Type, Tuple, TypeVar, ParamSpec
+P = ParamSpec("P")
+R = TypeVar("R")
 
-
-def safe_operation(default_return: Any = None, exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]] = Exception, log_error: bool = True):
+def safe_operation(
+      default_return: Any = None, 
+      exceptions: Union[Type[Exception], Tuple[Type[Exception], ...]] = Exception, 
+      log_error: bool = True
+   ):
    """
    Decorator to handle errors automatically with logging.
 
@@ -14,16 +19,15 @@ def safe_operation(default_return: Any = None, exceptions: Union[Type[Exception]
    from scripts.logger.logger import get_logger
    logger = get_logger(__name__)
    
-   def decorator(func: Callable) -> Callable:
+   def decorator(func: Callable[P, R]) -> Callable[P, Union[R, Any]]:
       @functools.wraps(func)
-      def wrapper(*args, **kwargs):
+      def wrapper(*args: P.args, **kwargs: P.kwargs) -> Union[R, Any]:
          try:
             return func(*args, **kwargs)
          except exceptions as e:
             error_msg = f"Error in {func.__name__}: {e}"
             if log_error:
                logger.error(error_msg)
-            if default_return:
-               return default_return
+            return default_return 
       return wrapper
    return decorator
