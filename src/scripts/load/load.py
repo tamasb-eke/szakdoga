@@ -6,20 +6,114 @@ from scripts.logger.logger import get_logger
 from scripts.safe_operation import safe_operation
 from scripts.basic_tools import ROOT, clear_console, SAVED_CONVERSATION_PATH
 from classes.db_manager import get_database
-from scripts.load.load_helper import *
+from scripts.load.load_helper import LoadHelper
 from scripts.visualize.graph import visualizer
-from .export import export_to_scv
-from model.schemas import GameLogsExport, RunSchema, AnswerSchema, HumanSchema, ConversationHistory, ValidationStatus
+from .export import Exporter
+from model.schemas import GameLogsExport, RunSchema, AnswerSchema, HumanSchema, ConversationHistory
 from model.validation import Validation
 
+class LoadToDatabase:
+    def __init__(self):
+        self.logger = get_logger(__name__)
+        self.db = get_database()
+        self.saved_conversation_path = SAVED_CONVERSATION_PATH
+        self.validator = Validation()
+        self.helper = LoadHelper(self.logger, self.db)
+        self.export = Exporter(self.logger, self.db)
 
-class JsonLoader:
+    @safe_operation()
+    def llm_messages_loader(
+            self,
+            llm_messages:ConversationHistory, 
+            run_id:int = None, 
+            date:str = datetime.now().strftime('%Y%m%d_%H%M%S')
+        ):
+        """
+        This function basically get the llm_messages and the it load to db. It can be used after a chatbot conversation ended and
+        you want to save the results to database.
+        
+        :param llm_meesages: The variable that stores the conversation between the LLM and the user
+        :param run_id: The run_id that you want to save to it. If no one is given then the default is the latest run.
+        :param date: The date of the exportation to database. (By default is the current date)
+        """
+
+        if not run_id:
+            run_id = self.db.run.get_latest_id()
+
+        for content in (item.content for item in llm_messages.messages if item.role == "assistant"):
+            validation_message = self.validator.validate_chain(content)
+
+            if validation_message == self.validator.statuses.SYNTAXERROR:
+                self.logger.warning(f"Incorrect syntactic for wordchain: {content}") #can happen because llm gives not just answers
+                continue
+
+            self.db.answer.insert(
+                AnswerSchema(
+                    run_id=run_id,
+                    chain=content,
+                    chain_length=len(content.split('-')),
+                    sourceWord=content.split('-')[0],
+                    targetWord=content.split('-')[-1],
+                    date=date,
+                    validation=validation_message
+                )
+            )
+
+    def evaluate_results(self):
+        """This function print out validation to output"""
+
+        run_id = self.helper.select_result()
+        if not run_id:
+            return
+        
+        self.db.evaluation(run_id=run_id)
+        print("\n\nDo you want to save the results to a .csv? (y) Yes (n) No")
+        export = input("Y/N: ").lower()
+        if export in ['y', 'yes']:
+            self.export.export_to_csv(run_id=int(run_id))
+        
+        print("\n\nDo you want to visualize the results? (y) Yes (n) No")
+        visualize = input("Y/N: ").lower()
+        if visualize in ['y', 'yes']:
+            visualizer(run_id=int(run_id))
+
+    def re_evaluate_results(self):
+        """This function re evaluate results for a given run and then print out validation to output"""
+        run_id = self.helper.select_result()
+        self.helper.re_evaluate_validation(run_id=run_id)
+        self.db.evaluation(run_id=run_id)
+
+
+
+def reload_older():
+    """A function that calls the human result loader or the older result loader"""
+
+    choosable_tasks = {'1', '2', 'e'}
+    loader = LoadToDatabase()
+    json_loader = JsonLoader(loader)
+    while True:
+        clear_console()
+        print("There is two kind of reload you can do. First is reload the results of the human study from .json. " \
+        "The Second one is reloading already saved (.json) results\n")
+        print("1) Reload human study result")
+        print("2) Reload saved game results")
+        print("e) Exit")
+        
+        task = input("Please choose: ")
+        if not task in choosable_tasks:
+            print("\nThe given number was not recognisable. Please choose another one.\n")
+        else:
+            match task:
+                case '1':
+                    json_loader.study_results_to_db()
+                case '2':
+                    json_loader.older_results_to_db(result_path=loader.helper.get_manually_collected_json_path(loader.db))
+                case 'e':
+                    break
+
+class JsonLoader(LoadToDatabase):
     def __init__(self):
         self.json_path = Path(ROOT/'data/other_data_files/word_navigation_game_export.json')
-        self.loader = LoadToDatabase()
-        self.logger = self.loader.logger
-        self.db = self.loader.db
-        self.validator = self.loader.validator
         self.saved_directory = SAVED_CONVERSATION_PATH
 
     @safe_operation()
@@ -61,7 +155,7 @@ class JsonLoader:
 
                 games_played += 1
                 validation = self.validator.validate_chain(game_data.chain)
-                formatted_date = convert_date(game_data.raw_date)
+                formatted_date = self.helper.convert_date(game_data.raw_date)
 
                 self.db.answer.insert(
                     AnswerSchema(
@@ -85,7 +179,7 @@ class JsonLoader:
 
                 self.db.run.update_field(run_id=run_id, column='successful', value=True)
 
-        clear_unesecarry(self.db)
+        self.helper.clear_unesecarry(self.db)
 
     @safe_operation()
     def older_results_to_db(self, result_path:Path|str) -> None:
@@ -123,7 +217,7 @@ class JsonLoader:
             if "messages" not in raw_data:
                 raise ValueError("Invalid JSON structure: missing 'messages' key.")
 
-        self.loader.llm_messages_loader(
+        self.llm_messages_loader(
             llm_messages=ConversationHistory(**raw_data),
             run_id=run_id,
             date=date
@@ -149,13 +243,13 @@ class JsonLoader:
             raise NotADirectoryError(f"The {SAVED_CONVERSATION_PATH} folder does not exists!")
 
         clear_console()
-        filepath = self.saved_directory / get_file_from_user(self.saved_directory)
+        filepath = self.saved_directory / self.helper.get_file_from_user(self.saved_directory)
         if not filepath.exists():
             raise FileExistsError(f"Filepath not exists: {filepath}")
-        llm_id = get_llm_id_from_user()
+        llm_id = self.helper.get_llm_id_from_user()
         if not llm_id:
             return
-        task_id = get_task_id_from_user()
+        task_id = self.helper.get_task_id_from_user()
         if not task_id:
             return
 
@@ -174,7 +268,7 @@ class JsonLoader:
             if "messages" not in raw_data:
                 raise ValueError("Invalid JSON structure: missing 'messages' key.")
 
-        self.loader.llm_messages_loader(
+        self.llm_messages_loader(
             llm_messages=ConversationHistory(**raw_data),
             run_id=run_id,
             date=date
@@ -186,12 +280,8 @@ class JsonLoader:
         self.db.run.update_field(run_id=run_id, column='json_path', new_value=str(new_file_path))
         self.db.run.update_field(run_id=run_id, column='successful', new_value=True)
 
-class TxtLoader:
+class TxtLoader(LoadToDatabase):
     def __init__(self):
-        self.loader = LoadToDatabase()
-        self.logger = self.loader.logger
-        self.db = self.loader.db
-        self.validator = self.loader.validator
         self.saved_directory = SAVED_CONVERSATION_PATH
 
     @staticmethod
@@ -215,7 +305,7 @@ class TxtLoader:
 
         for line in data.split('\n'):
             validation = self.validator.validate_chain(line)
-            if validation != ValidationStatus.SYNTAXERROR:
+            if validation != self.validator.statuses.SYNTAXERROR:
                 self.db.answer.insert(
                     AnswerSchema(
                         run_id=run_id,
@@ -246,13 +336,13 @@ class TxtLoader:
             raise NotADirectoryError(f"The {SAVED_CONVERSATION_PATH} folder does not exists!")
 
         clear_console()
-        filepath = self.saved_directory / get_file_from_user(self.saved_directory, extension='.txt')
+        filepath = self.saved_directory / self.helper.get_file_from_user(self.saved_directory, extension='.txt')
         if not filepath.exists():
             raise FileExistsError(f"File not exists: {filepath}")
-        llm_id = get_llm_id_from_user()
+        llm_id = self.helper.get_llm_id_from_user()
         if not llm_id:
             return
-        task_id = get_task_id_from_user()
+        task_id = self.helper.get_task_id_from_user()
         if not task_id:
             return
 
@@ -276,103 +366,3 @@ class TxtLoader:
         self.db.run.update_field(run_id=run_id, column='json_path', new_value=str(new_file_path))
         self.db.run.update_field(run_id=run_id, column='successful', new_value=True)
 
-class LoadToDatabase:
-    def __init__(self):
-        self.logger = get_logger(__name__)
-        self.db = get_database()
-        self.saved_conversation_path = SAVED_CONVERSATION_PATH
-        self.validator = Validation()
-
-    @safe_operation()
-    def llm_messages_loader(
-            self,
-            llm_messages:ConversationHistory, 
-            run_id:int = None, 
-            date:str = datetime.now().strftime('%Y%m%d_%H%M%S')
-        ):
-        """
-        This function basically get the llm_messages and the it load to db. It can be used after a chatbot conversation ended and
-        you want to save the results to database.
-        
-        :param llm_meesages: The variable that stores the conversation between the LLM and the user
-        :param run_id: The run_id that you want to save to it. If no one is given then the default is the latest run.
-        :param date: The date of the exportation to database. (By default is the current date)
-        """
-
-        if not run_id:
-            run_id = self.db.run.get_latest_id()
-
-        for content in (item.content for item in llm_messages.messages if item.role == "assistant"):
-            validation_message = self.validator.validate_chain(content)
-
-            if validation_message == ValidationStatus.SYNTAXERROR:
-                self.logger.warning(f"Incorrect syntactic for wordchain: {content}") #can happen because llm gives not just answers
-                continue
-
-            self.db.answer.insert(
-                AnswerSchema(
-                    run_id=run_id,
-                    chain=content,
-                    chain_length=len(content.split('-')),
-                    sourceWord=content.split('-')[0],
-                    targetWord=content.split('-')[-1],
-                    date=date,
-                    validation=validation_message
-                )
-            )
-
-    def evaluate_results():
-        """This function print out validation to output"""
-
-        db = get_database()
-        run_id = select_result()
-
-        if not run_id:
-            return
-        db.evaluation(run_id=run_id)
-
-        print("\n\nDo you want to save the results to a .csv? (y) Yes (n) No")
-        export = input("Y/N: ").lower()
-        if export in ['y', 'yes']:
-            export_to_scv(run_id=int(run_id))
-        
-        
-        print("\n\nDo you want to visualize the results? (y) Yes (n) No")
-        visualize = input("Y/N: ").lower()
-        if visualize in ['y', 'yes']:
-            visualizer(run_id=int(run_id))
-
-    def re_evaluate_results():
-        """This function re evaluate results for a given run and then print out validation to output"""
-
-        db = get_database()
-        run_id = select_result()
-        re_evaluate_validation(run_id=run_id)
-        db.evaluation(run_id=run_id)
-
-
-
-def reload_older():
-    """A function that calls the human result loader or the older result loader"""
-
-    choosable_tasks = {'1', '2', 'e'}
-    loader = JsonLoader()
-    while True:
-        clear_console()
-        print("There is two kind of reload you can do. First is reload the results of the human study from .json. " \
-        "The Second one is reloading already saved (.json) results\n")
-        print("1) Reload human study result")
-        print("2) Reload saved game results")
-        print("e) Exit")
-        
-        task = input("Please choose: ")
-        if not task in choosable_tasks:
-            print("\nThe given number was not recognisable. Please choose another one.\n")
-        else:
-            match task:
-                case '1':
-                    loader.study_results_to_db()
-                case '2':
-                    loader.older_results_to_db(result_path=get_manually_collected_json_path(loader.db))
-                case 'e':
-                    break
