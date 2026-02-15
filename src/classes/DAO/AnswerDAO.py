@@ -3,21 +3,21 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, delete, update, insert
 from model.database import Answer, Run
-from model.schemas import ValidationTypes, AnswerSchema
+from model.schemas import ValidationStatus, AnswerSchema
 from scripts.safe_operation import safe_operation
-from scripts.logger.logger import get_logger
+from logging import Logger
 
 
 class AnswerDAO:
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, logger:Logger):
         self.session = session
-        self.logger = get_logger(__name__)
+        self.logger = logger
 
     @safe_operation(default_return=[])
     def get_all(
         self, 
         run_id: int, 
-        validation_filters: Optional[List[ValidationTypes]] = None
+        validation_filters: Optional[List[ValidationStatus]] = None
     ) -> List[Dict[str, Any]]:
         """
         Retrieve answers with optional filtering by validation status.

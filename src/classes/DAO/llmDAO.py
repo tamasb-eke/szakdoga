@@ -4,12 +4,12 @@ from sqlalchemy import select, insert, delete
 from model.database import LLM
 from model.schemas import LLMSchema
 from scripts.safe_operation import safe_operation
-from scripts.logger.logger import get_logger
+from logging import Logger
 
 class LLMDAO:
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, logger:Logger):
         self.session = session
-        self.logger = get_logger(__name__)
+        self.logger = logger
 
     @safe_operation(default_return=[])
     def get_all(self) -> List[LLMSchema]:

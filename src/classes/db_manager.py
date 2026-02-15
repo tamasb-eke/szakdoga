@@ -15,16 +15,16 @@ from model.schemas import ValidationStatus, RunSchema
 
 class Database:
    def __init__(self):
+      self.logger = get_logger(__name__)
       self.database_url = get_enviromental_variable('DATABASE_PATH')
       self.engine = create_engine(self.database_url)
       self.session = Session(self.engine)
-      self.llm = LLMDAO(self.session)
-      self.answer = AnswerDAO(self.session)
-      self.task = TaskDAO(self.session)
-      self.run = RunDAO(self.session)
-      self.human = HumanDAO(self.session)
-      self.logger = get_logger(__name__)
-
+      self.llm = LLMDAO(self.session, self.logger)
+      self.answer = AnswerDAO(self.session, self.logger)
+      self.task = TaskDAO(self.session, self.logger)
+      self.run = RunDAO(self.session, self.logger)
+      self.human = HumanDAO(self.session, self.logger)
+      
    def close(self):
       """Close the database session"""
       self.session.close()
