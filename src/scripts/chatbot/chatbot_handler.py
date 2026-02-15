@@ -5,7 +5,7 @@ from typing import List
 from scripts.basic_tools import clear_console
 from scripts import safe_operation
 from classes.api import Chatbot, get_chatbot
-from scripts.question_validation import syntactic_validation, semantic_validation
+from model.validation import Validation
 from scripts.logger.logger import get_logger
 
 class ChatbotCommunication():
@@ -66,9 +66,6 @@ class ChatbotCommunication():
                 self.number_of_questions = int(count_input)
                 break
 
-
-
-
 @safe_operation()
 def manual_game_conversation(chatbot: Chatbot, provider: str, model: str, reasoning: bool) -> None:
     """
@@ -90,9 +87,7 @@ def manual_game_conversation(chatbot: Chatbot, provider: str, model: str, reason
             model=model,
             reasoning=reasoning
         )
-        
         print(f"[Chatbot]: {bot_response}")
-
         if bot_response.strip() in success_phrases:
             return
 
@@ -110,6 +105,7 @@ def run_chat_session(
     """
     db = get_database()
     logger = get_logger(__name__)
+    validator = Validation()
     print('\n--- Game Rule Initialization ---')
     print("Please provide the game description (or path to a .txt file).")
     manual_game_conversation(chatbot, provider, model, reasoning)
@@ -127,9 +123,9 @@ def run_chat_session(
             model=model,
             reasoning=reasoning
         )
-        
-        if syntactic_validation(answer):
-            validation_message = semantic_validation(answer)
+
+        validation_message = validator.validate_chain(answer)
+        if validation_message != validator.statuses.SYNTAXERROR:
             
             db.answer.insert(
                 AnswerSchema(
@@ -142,7 +138,6 @@ def run_chat_session(
                 )
             )
             print(f"({i}/{number_of_questions}) {question['sourceWord']} -> {question['targetWord']} | Result: {validation_message}")
-        
         else:
             manual_game_conversation(chatbot, provider, model, reasoning)
 
