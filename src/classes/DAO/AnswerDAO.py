@@ -18,7 +18,7 @@ class AnswerDAO:
         self, 
         run_id: int, 
         validation_filters: Optional[List[ValidationStatus]] = None
-    ) -> List[Dict[str, Any]]:
+    ) -> List[AnswerSchema]:
         """
         Retrieve answers with optional filtering by validation status.
         Returns a list of dictionaries (serialized Pydantic models).
@@ -29,7 +29,7 @@ class AnswerDAO:
             q = q.where(Answer.validation.in_(validation_filters))
             
         results = self.session.scalars(q).all()
-        return [AnswerSchema.model_validate(r).model_dump() for r in results]
+        return [AnswerSchema.model_validate(r) for r in results]
 
     @safe_operation(default_return={})
     def get_validation_stats(self, run_id: int) -> Dict[str, int]:

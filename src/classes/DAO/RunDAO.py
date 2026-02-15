@@ -13,13 +13,13 @@ class RunDAO:
         self.logger = logger
 
     @safe_operation(default_return=[])
-    def get_all(self) -> List[Dict[str, Any]]:
+    def get_all(self) -> List[RunSchema]:
         """
         Returns all Run records as a list of dictionaries.
         """
         stmt = select(Run)
         results = self.session.scalars(stmt).all()
-        return [RunSchema.model_validate(r).model_dump() for r in results]
+        return [RunSchema.model_validate(r) for r in results]
 
     @safe_operation(default_return=[])
     def get_all_readable(self) -> List[Dict[str, Any]]:

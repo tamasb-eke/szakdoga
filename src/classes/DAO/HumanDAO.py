@@ -12,14 +12,14 @@ class HumanDAO:
         self.logger = logger
 
     @safe_operation(default_return=[])
-    def get_all(self) -> List[Dict[str, Any]]:
+    def get_all(self) -> List[HumanSchema]:
         """
         Returns all data from Human table as a list of dictionaries.
         """
         stmt = select(Human)
         results = self.session.scalars(stmt).all()
 
-        return [HumanSchema.model_validate(r).model_dump() for r in results]
+        return [HumanSchema.model_validate(r) for r in results]
 
     @safe_operation(default_return=[])
     def get_all_questions(self, human_id: str) -> List[Dict[str, str]]:

@@ -12,13 +12,13 @@ class TaskDAO:
         self.logger = logger
 
     @safe_operation(default_return=[])
-    def get_all(self) -> List[Dict[str, Any]]:
+    def get_all(self) -> List[TaskSchema]:
         """
         Returns all Task records as a list of dictionaries.
         """
         stmt = select(Task)
         results = self.session.scalars(stmt).all()
-        return [TaskSchema.model_validate(r).model_dump() for r in results]
+        return [TaskSchema.model_validate(r) for r in results]
 
     @safe_operation()
     def insert(self, task_data: TaskSchema) -> None:
