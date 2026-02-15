@@ -22,7 +22,7 @@ class RunDAO:
         return [RunSchema.model_validate(r) for r in results]
 
     @safe_operation(default_return=[])
-    def get_all_readable(self) -> List[Dict[str, Any]]:
+    def get_all_readable(self) -> List[RunSchema]:
         """
         Returns a 'readable' view of runs, joined with LLM and Task names.
         Replaces the old 'readable=True' flag.
@@ -42,7 +42,7 @@ class RunDAO:
         )
         
         results = self.session.execute(stmt).mappings().all()
-        return [ReadableRunSchema.model_validate(r).model_dump() for r in results]
+        return [ReadableRunSchema.model_validate(r) for r in results]
 
     @safe_operation(default_return=[])
     def get_values_by_column(self, column: str, unique: bool = False) -> List[Any]:
