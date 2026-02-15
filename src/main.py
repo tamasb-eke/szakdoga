@@ -1,6 +1,6 @@
 from scripts.load_enviroment import AUTHOR
 from scripts.logger.logger import get_logger
-from scripts.load.load import reload_older, load_manual_datas_json, load_manual_datas_txt, evaluate_results, re_evaluate_results
+from scripts.load.load import TxtLoader, JsonLoader
 from classes.db_manager import get_database
 from scripts.basic_tools import clear_console
 from scripts.terminal.terminal import terminal
@@ -36,31 +36,33 @@ def assignment_selector() -> str:
 def main():
     """Just the main function of the code that call's the assignment's function"""
     db = get_database()
+    json_loader = JsonLoader()
+    txt_loader = TxtLoader()
     while True:
         task = assignment_selector()
         
         match task:
             case '1':
-                reload_older()
+                json_loader.reload_older()
                 input("\nPress any key to continue")
                 clear_console()
             case '2':
                 start_conversation()
                 clear_console()
             case '3':
-                evaluate_results()
+                json_loader.evaluate_results()
                 input("\nPress any key to continue")
                 clear_console()
             case '4':
-                re_evaluate_results()
+                json_loader.re_evaluate_results()
                 input("\nPress any key to continue")
                 clear_console()
             case '5':
-                load_manual_datas_json()
+                json_loader.load_manual_datas_json()
                 input("\nPress any key to continue")
                 clear_console()
             case '6':
-                load_manual_datas_txt()
+                txt_loader.load_manual_datas_txt()
                 input("\nPress any key to continue")
                 clear_console()
             case '7':

@@ -84,33 +84,6 @@ class LoadToDatabase:
         self.db.evaluation(run_id=run_id)
 
 
-
-def reload_older():
-    """A function that calls the human result loader or the older result loader"""
-
-    choosable_tasks = {'1', '2', 'e'}
-    loader = LoadToDatabase()
-    json_loader = JsonLoader(loader)
-    while True:
-        clear_console()
-        print("There is two kind of reload you can do. First is reload the results of the human study from .json. " \
-        "The Second one is reloading already saved (.json) results\n")
-        print("1) Reload human study result")
-        print("2) Reload saved game results")
-        print("e) Exit")
-        
-        task = input("Please choose: ")
-        if not task in choosable_tasks:
-            print("\nThe given number was not recognisable. Please choose another one.\n")
-        else:
-            match task:
-                case '1':
-                    json_loader.study_results_to_db()
-                case '2':
-                    json_loader.older_results_to_db(result_path=loader.helper.get_manually_collected_json_path(loader.db))
-                case 'e':
-                    break
-
 class JsonLoader(LoadToDatabase):
     def __init__(self):
         self.json_path = Path(ROOT/'data/other_data_files/word_navigation_game_export.json')
@@ -279,6 +252,31 @@ class JsonLoader(LoadToDatabase):
         filepath.rename(new_file_path)
         self.db.run.update_field(run_id=run_id, column='json_path', new_value=str(new_file_path))
         self.db.run.update_field(run_id=run_id, column='successful', new_value=True)
+
+    def reload_older(self):
+        """A function that calls the human result loader or the older result loader"""
+
+        choosable_tasks = {'1', '2', 'e'}
+
+        while True:
+            clear_console()
+            print("There is two kind of reload you can do. First is reload the results of the human study from .json. " \
+            "The Second one is reloading already saved (.json) results\n")
+            print("1) Reload human study result")
+            print("2) Reload saved game results")
+            print("e) Exit")
+            
+            task = input("Please choose: ")
+            if not task in choosable_tasks:
+                print("\nThe given number was not recognisable. Please choose another one.\n")
+            else:
+                match task:
+                    case '1':
+                        self.study_results_to_db()
+                    case '2':
+                        self.older_results_to_db(result_path=self.helper.get_manually_collected_json_path())
+                    case 'e':
+                        break
 
 class TxtLoader(LoadToDatabase):
     def __init__(self):

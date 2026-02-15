@@ -44,14 +44,13 @@ class LoadHelper:
         dt = parser.parse(date, tzinfos=tz_mapping)
         return dt.strftime("%Y-%m-%d %H:%M:%S")
 
-    @staticmethod
-    def get_manually_collected_json_path(db:Database) -> Path:
+    def get_manually_collected_json_path(self) -> Path:
         """
         Get the path to the manually collected .json
         It lists all the .json files in the 'data/saved_conversation' folder, and the user can choose between them. 
         """
         clear_console()
-        folder_paths = db.run.get_values_by_column(column="json_path", unique=True)
+        folder_paths = self.db.run.get_values_by_column(column="json_path", unique=True)
 
         for i, file in enumerate(folder_paths, start=1):
             print(f"{i}) {Path(file).name}")
