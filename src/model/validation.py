@@ -1,5 +1,5 @@
 from scripts.basic_tools import GMPL_PATH, VALID_WORDS_PATH
-from schemas import ValidationStatus
+from model.schemas import ValidationStatus
 from typing import List, Tuple
 import re
 import networkx as nx

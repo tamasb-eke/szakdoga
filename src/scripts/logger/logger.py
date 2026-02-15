@@ -4,7 +4,7 @@ from logging import Logger
 class LevelBasedFormatter(logging.Formatter):
     def __init__(self):
         super().__init__()
-        self.detailed_fmt = logging.Formatter('%(levelname)s - %(filename)s - %(message)s')
+        self.detailed_fmt = logging.Formatter('%(levelname)s - %(message)s')
         self.simple_fmt = logging.Formatter('%(message)s')
     
     def format(self, record):

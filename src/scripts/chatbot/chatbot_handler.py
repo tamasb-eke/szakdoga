@@ -3,7 +3,7 @@ from pathlib import Path
 from model.schemas import LLMSchema, TaskSchema, AnswerSchema
 from typing import List
 from scripts.basic_tools import clear_console
-from scripts import safe_operation
+from scripts.safe_operation import safe_operation
 from classes.api import Chatbot, get_chatbot
 from model.validation import Validation
 from scripts.logger.logger import get_logger

@@ -86,8 +86,8 @@ class LoadToDatabase:
 
 class JsonLoader(LoadToDatabase):
     def __init__(self):
+        super().__init__()
         self.json_path = Path(ROOT/'data/other_data_files/word_navigation_game_export.json')
-        self.saved_directory = SAVED_CONVERSATION_PATH
 
     @safe_operation()
     def study_results_to_db(self) -> None:
@@ -280,7 +280,7 @@ class JsonLoader(LoadToDatabase):
 
 class TxtLoader(LoadToDatabase):
     def __init__(self):
-        self.saved_directory = SAVED_CONVERSATION_PATH
+        super().__init__()
 
     @staticmethod
     def extract_word_chain(string: str) -> str | None:

@@ -3,7 +3,7 @@ from classes.db_manager import Database
 from dateutil import parser, tz
 from scripts.basic_tools import clear_console
 from pathlib import Path
-from scripts.basic_tools import print_table, load_data
+from scripts.basic_tools import print_table
 from model.validation import Validation
 from logging import Logger
 
@@ -159,7 +159,8 @@ class LoadHelper:
     def select_result(self):
         """This function helps to choose the user which older run should be evaluated"""
 
-        datas = self.db.run.get_all_readable()
+        runs = self.db.run.get_all_readable()
+        datas = [list(run.model_dump().values()) for run in runs]
         clear_console()
         while True:
             
@@ -196,4 +197,3 @@ class LoadHelper:
                     column = 'validation',
                     new_value = validation_message
                 )
-

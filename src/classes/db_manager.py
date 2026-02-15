@@ -85,7 +85,7 @@ class Database:
          ValidationStatus.VALID : 0
       }
 
-      is_successful = self.run.get_column_value(run_id, RunSchema.successful)
+      is_successful = self.run.get_column_value(run_id, 'successful')
       
       if str(is_successful).lower() == "false":
          self.logger.warning(f"Run {run_id} was unsuccessful. Results may be affected.")

@@ -1,9 +1,8 @@
 from scripts.load_enviroment import AUTHOR
-from scripts.logger.logger import get_logger
 from scripts.load.load import TxtLoader, JsonLoader
 from classes.db_manager import get_database
 from scripts.basic_tools import clear_console
-from scripts.terminal.terminal import terminal
+from scripts.terminal.terminal import Terminal
 from scripts.chatbot.chatbot_handler import start_conversation
 
 
@@ -35,42 +34,40 @@ def assignment_selector() -> str:
 
 def main():
     """Just the main function of the code that call's the assignment's function"""
-    db = get_database()
-    json_loader = JsonLoader()
-    txt_loader = TxtLoader()
+
     while True:
         task = assignment_selector()
         
         match task:
             case '1':
-                json_loader.reload_older()
+                JsonLoader().reload_older()
                 input("\nPress any key to continue")
                 clear_console()
             case '2':
                 start_conversation()
                 clear_console()
             case '3':
-                json_loader.evaluate_results()
+                JsonLoader().evaluate_results()
                 input("\nPress any key to continue")
                 clear_console()
             case '4':
-                json_loader.re_evaluate_results()
+                JsonLoader().re_evaluate_results()
                 input("\nPress any key to continue")
                 clear_console()
             case '5':
-                json_loader.load_manual_datas_json()
+                JsonLoader().load_manual_datas_json()
                 input("\nPress any key to continue")
                 clear_console()
             case '6':
-                txt_loader.load_manual_datas_txt()
+                TxtLoader().load_manual_datas_txt()
                 input("\nPress any key to continue")
                 clear_console()
             case '7':
                 clear_console()
-                terminal()
+                Terminal().terminal()
                 clear_console()
             case 'e':
-                db.close()
+                get_database().close()
                 break
 
 
