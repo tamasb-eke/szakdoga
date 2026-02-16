@@ -4,15 +4,15 @@ import random
 from matplotlib.lines import Line2D
 from pathlib import Path
 from scripts.basic_tools import SAVE_PICTURE_PATH
-from model.schemas import ValidationTypes
+from model.schemas import ValidationStatus
 
 COLOR_MAP = {
-    ValidationTypes.TRUE: '#2ecc71',         
-    ValidationTypes.TOO_SHORT_CHAIN_LENGTH: '#e74c3c',  
-    ValidationTypes.REPEATING_WORDS: '#f39c12',         
-    ValidationTypes.NOT_NEIGHBORS: '#9b59b6',      
-    ValidationTypes.NOT_IN_ACCAPTABLE_TXT_LIST: "#364cda",
-    ValidationTypes.UNKNOWN: '#95a5a6'        
+    ValidationStatus.VALID: '#2ecc71',         
+    ValidationStatus.TOO_SHORT: '#e74c3c',  
+    ValidationStatus.REPEATING_WORDS: '#f39c12',         
+    ValidationStatus.NOT_NEIGHBORS: '#9b59b6',      
+    ValidationStatus.INVALID_WORD: "#364cda",
+    ValidationStatus.UNKNOWN: '#95a5a6'        
 }
 
 
