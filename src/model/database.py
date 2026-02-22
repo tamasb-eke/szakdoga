@@ -51,4 +51,4 @@ class Answer(Base):
     date = Column(Text, default=datetime.today().strftime("%Y-%m-%d %H:%M"))
     sourceWord = Column(Text, nullable=False)
     targetWord = Column(Text, nullable=False)
-    validation = Column(SAEnum(ValidationStatus), nullable=False, default="True") 
+    validation = Column(SAEnum(ValidationStatus, values_callable=lambda obj: [e.value for e in obj])) 
