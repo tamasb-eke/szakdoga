@@ -8,7 +8,7 @@ from scripts.logger.logger import get_logger
 
 
 class ValidationStatus(str, Enum):
-    VALID = 'True'
+    TRUE = 'True'
     TOO_SHORT = 'Too short chain length'
     REPEATING_WORDS = 'Repeating words'
     NOT_NEIGHBORS = 'Not neighbors'
