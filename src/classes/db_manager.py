@@ -82,7 +82,7 @@ class Database:
          ValidationStatus.REPEATING_WORDS : 0.6,
          ValidationStatus.NOT_NEIGHBORS : 0.4,
          ValidationStatus.INVALID_WORD : 0.2,
-         ValidationStatus.VALID : 0
+         ValidationStatus.TRUE : 0
       }
 
       is_successful = self.run.get_column_value(run_id, 'successful')

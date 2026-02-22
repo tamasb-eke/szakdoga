@@ -32,7 +32,7 @@ class Validation:
         if not self.semantic.all_correct_words(words):
             return ValidationStatus.INVALID_WORD
 
-        return ValidationStatus.VALID
+        return ValidationStatus.TRUE
 
 
 class SyntacticValidation:

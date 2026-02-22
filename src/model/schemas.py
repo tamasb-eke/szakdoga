@@ -19,7 +19,7 @@ class ValidationStatus(str, Enum):
     @classmethod
     def errors(cls) -> List['ValidationStatus']:
         """Returns all error statuses (everything except VALID)."""
-        return [member for member in cls if member != cls.VALID]
+        return [member for member in cls if member != cls.TRUE]
 
 class AnswerSchema(BaseModel):
     id: int

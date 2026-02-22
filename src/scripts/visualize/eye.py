@@ -7,7 +7,7 @@ from scripts.basic_tools import SAVE_PICTURE_PATH
 from model.schemas import ValidationStatus
 
 COLOR_MAP = {
-    ValidationStatus.VALID: '#2ecc71',         
+    ValidationStatus.TRUE: '#2ecc71',         
     ValidationStatus.TOO_SHORT: '#e74c3c',  
     ValidationStatus.REPEATING_WORDS: '#f39c12',         
     ValidationStatus.NOT_NEIGHBORS: '#9b59b6',      
