@@ -4,19 +4,19 @@ import random
 from matplotlib.lines import Line2D
 from pathlib import Path
 from scripts.basic_tools import SAVE_PICTURE_PATH
-from model.schemas import ValidationStatus
+from model.schemas import ValidationStatus, AnswerSchema
 
 COLOR_MAP = {
-    ValidationStatus.TRUE: '#2ecc71',         
-    ValidationStatus.TOO_SHORT: '#e74c3c',  
-    ValidationStatus.REPEATING_WORDS: '#f39c12',         
-    ValidationStatus.NOT_NEIGHBORS: '#9b59b6',      
-    ValidationStatus.INVALID_WORD: "#364cda",
-    ValidationStatus.UNKNOWN: '#95a5a6'        
+    ValidationStatus.TRUE.value: '#2ecc71',         
+    ValidationStatus.TOO_SHORT.value: '#e74c3c',  
+    ValidationStatus.REPEATING_WORDS.value: '#f39c12',         
+    ValidationStatus.NOT_NEIGHBORS.value: '#9b59b6',      
+    ValidationStatus.INVALID_WORD.value: "#364cda",
+    ValidationStatus.UNKNOWN.value: '#95a5a6'        
 }
 
 
-def vizualize_game_data(game_data:list[dict], filename:Path='szem_abra.png'):
+def vizualize_game_data(game_data:list[AnswerSchema], filename:Path='szem_abra.png'):
     """
     Szem ábra kirajzolása és mentése.
     
@@ -31,10 +31,10 @@ def vizualize_game_data(game_data:list[dict], filename:Path='szem_abra.png'):
     present_types = set() 
     
     for game in game_data:
-        steps = game.get('length', 5)
-        val_type = game.get('validation', 'unknown')
+        steps = game.chain_length
+        val_type = game.validation.value
         present_types.add(val_type)
-        color = COLOR_MAP.get(val_type, COLOR_MAP['unknown'])
+        color = COLOR_MAP.get(val_type, '#95a5a6')
         
         base_height = steps * 0.4 
         jitter = random.uniform(-0.2, 0.2)
@@ -53,7 +53,7 @@ def vizualize_game_data(game_data:list[dict], filename:Path='szem_abra.png'):
     
     legend_elements = []
     for val_type in present_types:
-        c = COLOR_MAP.get(val_type, COLOR_MAP['unknown'])
+        c = COLOR_MAP.get(val_type, '#95a5a6')
         legend_elements.append(Line2D([0], [0], color=c, lw=2, label=val_type))
     ax.legend(handles=legend_elements, loc='upper right', frameon=False)
     
