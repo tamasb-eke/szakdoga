@@ -7,12 +7,12 @@ from scripts.basic_tools import SAVE_PICTURE_PATH
 from model.schemas import ValidationStatus, AnswerSchema
 
 COLOR_MAP = {
-    ValidationStatus.TRUE.value: '#2ecc71',         
-    ValidationStatus.TOO_SHORT.value: '#e74c3c',  
-    ValidationStatus.REPEATING_WORDS.value: '#f39c12',         
-    ValidationStatus.NOT_NEIGHBORS.value: '#9b59b6',      
-    ValidationStatus.INVALID_WORD.value: "#364cda",
-    ValidationStatus.UNKNOWN.value: '#95a5a6'        
+    ValidationStatus.TRUE.value: "#3A9D5D",
+    ValidationStatus.TOO_SHORT.value: "#C44E52",
+    ValidationStatus.REPEATING_WORDS.value: "#DD8452",
+    ValidationStatus.NOT_NEIGHBORS.value: "#9370DB",
+    ValidationStatus.INVALID_WORD.value: "#4C72B0",
+    ValidationStatus.UNKNOWN.value: "#B0B0B0"
 }
 
 
@@ -25,7 +25,7 @@ def vizualize_game_data(game_data:list[AnswerSchema], filename:Path='szem_abra.p
     file_name (str): A kimeneti fájl neve (pl. 'eredmeny.png')
     """
 
-    fig, ax = plt.subplots(figsize=(12, 7))
+    fig, ax = plt.subplots(figsize=(12, 7)) #12, 7
     x_start, x_end = 0, 10
     x = np.linspace(x_start, x_end, 200)
     present_types = set() 
@@ -36,8 +36,8 @@ def vizualize_game_data(game_data:list[AnswerSchema], filename:Path='szem_abra.p
         present_types.add(val_type)
         color = COLOR_MAP.get(val_type, '#95a5a6')
         
-        base_height = steps * 0.4 
-        jitter = random.uniform(-0.2, 0.2)
+        base_height = steps * 0.4      
+        jitter = random.uniform(-0.3, 0.3) # -0.2, 0.2
         h = base_height + jitter
         direction = 1 if random.random() > 0.5 else -1
         h = h * direction
@@ -52,14 +52,15 @@ def vizualize_game_data(game_data:list[AnswerSchema], filename:Path='szem_abra.p
     ax.axis('off')
     
     legend_elements = []
-    for val_type in present_types:
-        c = COLOR_MAP.get(val_type, '#95a5a6')
-        legend_elements.append(Line2D([0], [0], color=c, lw=2, label=val_type))
-    ax.legend(handles=legend_elements, loc='upper right', frameon=False)
+    for val_type in COLOR_MAP:
+        if val_type in present_types:
+            c = COLOR_MAP.get(val_type, '#95a5a6')
+            legend_elements.append(Line2D([0], [0], color=c, lw=5, label=val_type))
+    ax.legend(handles=legend_elements, loc='upper right', frameon=False, title="Hibatípusok", fontsize=10)
     
-    plt.title(f"Összesített Eredmények ({len(game_data)} játék)", fontsize=16)
+    plt.title(f"Összesített Eredmények ({len(game_data)} játék)", fontsize=20, pad=20)
     plt.tight_layout()
-    plt.savefig(SAVE_PICTURE_PATH/filename, dpi=300, bbox_inches='tight')
+    plt.savefig(SAVE_PICTURE_PATH/filename, dpi=800, bbox_inches='tight')
     plt.close()
     
     print(f"SIKER! Az ábra elmentve ide: {SAVE_PICTURE_PATH/filename}")
