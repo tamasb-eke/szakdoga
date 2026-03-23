@@ -67,10 +67,15 @@ class LoadToDatabase:
             return
         
         self.db.evaluation(run_id=run_id)
-        print("\n\nDo you want to save the results to a .csv? (y) Yes (n) No")
+        print("\n\nDo you want to save the results to a .CSV? (y) Yes (n) No")
         export = input("Y/N: ").lower()
         if export in ['y', 'yes']:
             self.export.export_to_csv(run_id=int(run_id))
+
+        print("\n\nDo you want to save the results to a .GML? (y) Yes (n) No")
+        export = input("Y/N: ").lower()
+        if export in ['y', 'yes']:
+            self.export.export_to_gml(run_id=int(run_id))
         
         print("\n\nDo you want to visualize the results? (y) Yes (n) No")
         visualize = input("Y/N: ").lower()

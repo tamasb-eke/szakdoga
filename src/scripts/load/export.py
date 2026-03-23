@@ -1,6 +1,7 @@
 import pandas as pd
+import networkx as nx
 from classes.db_manager import Database
-from scripts.basic_tools import SAVE_CSV_PATH
+from scripts.basic_tools import EXPORT_PATH
 from scripts.safe_operation import safe_operation
 from scripts.load_enviroment import APP_ENV
 from logging import Logger
@@ -9,7 +10,7 @@ from model.validation import Validation
 class Exporter:
     def __init__(self, logger:Logger, db:Database):
         self.app_env = APP_ENV
-        self.save_path = SAVE_CSV_PATH
+        self.save_path = EXPORT_PATH
         self.logger = logger
         self.db = db
 
@@ -70,3 +71,48 @@ class Exporter:
         df = pd.DataFrame(exported_data)
         df.to_csv(outputfilepath, index=False)
         self.logger.info(f"run_id: {run_id} was exported to {outputfilepath} successfully")
+
+
+    def export_to_gml(self, run_id:int) -> None:
+        """
+        Fetches answers for a given run_id from the database and exports 
+        the word chains into a .gml file as a graph.
+        """
+        results = self.db.answer.get_all(run_id=run_id)
+        if len(results) == 0:
+            self.logger.warning(f"No results found for run_id {run_id}...")
+            return
+
+        llm_model = self.db.llm.get_column_value(
+            llm_id=self.db.run.get_column_value(run_id=run_id, column="llm_id"), 
+            column="model"
+        )
+
+        outputfilepath = self.save_path / f"{run_id}_{llm_model}.gml"
+        print(f"Exporting to {outputfilepath} ....")
+
+        if outputfilepath.exists():
+            self.logger.warning(f"Can not export {run_id}, it was already exported at: {outputfilepath}")
+            return
+        
+        G = nx.Graph() 
+        G.graph['results_used'] = len(results)
+        G.graph['run_id'] = run_id
+        G.graph['llm_model'] = llm_model
+        
+        for answer in results:
+            if not answer.chain:
+                continue
+                
+            words = answer.chain.replace('-', ' ').split(' ')
+            for i in range(len(words) - 1):
+                w1 = words[i].lower()
+                w2 = words[i+1].lower()
+            
+                if G.has_edge(w1, w2):
+                    G[w1][w2]['count'] += 1
+                else:
+                    G.add_edge(w1, w2, count=1)
+                    
+        nx.write_gml(G, outputfilepath)
+        print(f"Successfully exported Run {run_id} ({len(results)} chains) to {outputfilepath}")

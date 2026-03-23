@@ -11,7 +11,7 @@ SAVED_CONVERSATION_PATH = Path(ROOT/'data/saved_conversation')
 GMPL_PATH = Path(ROOT/'data/other_data_files/word_morph_network.gml')
 VALID_WORDS_PATH = Path(ROOT/'data/game_guides/valid_three_letter_words.txt')
 SAVE_PICTURE_PATH = Path(ROOT/'data/exported_pictures')
-SAVE_CSV_PATH = Path(ROOT/'data/exported_csv')
+EXPORT_PATH = Path(ROOT/'data/exported')
 DATA_FOLDER = Path("data/chatbot_results")
 
 

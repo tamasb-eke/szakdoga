@@ -56,7 +56,7 @@ def count_edge_frequencies(run_id:int) -> defaultdict:
     db = get_database()
     edge_counts = defaultdict(int)
     answers = db.answer.get_all(run_id=run_id, validation_filters=ValidationStatus.VALID)
-    chains = [r["chain"] for r in answers]
+    chains = [r.chain for r in answers]
 
     for line in chains:
         if run_id < 423:
