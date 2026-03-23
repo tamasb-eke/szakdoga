@@ -25,6 +25,8 @@ class AnswerDAO:
         """
         q = select(Answer).where(Answer.run_id == run_id)
         if validation_filters:
+            if not isinstance(validation_filters, list):
+                validation_filters = [validation_filters]
             q = q.where(Answer.validation.in_(validation_filters))
             
         results = self.session.scalars(q).all()

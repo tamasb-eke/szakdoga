@@ -9,6 +9,7 @@ from scripts.safe_operation import safe_operation
 from scripts.logger.logger import get_logger
 from scripts.load.load_helper import LoadHelper
 from pathlib import Path
+from model.schemas import ValidationStatus
 from scripts.basic_tools import (
     GMPL_PATH,
     SAVE_PICTURE_PATH
@@ -54,7 +55,7 @@ def count_edge_frequencies(run_id:int) -> defaultdict:
     
     db = get_database()
     edge_counts = defaultdict(int)
-    answers = db.answer.get_all(run_id=run_id, only_correct=True)
+    answers = db.answer.get_all(run_id=run_id, validation_filters=ValidationStatus.VALID)
     chains = [r["chain"] for r in answers]
 
     for line in chains:
@@ -262,7 +263,7 @@ def visualizer(run_id:int):
     if not min_frequency:
         return
     output_image_file = (
-        f"{SAVE_PICTURE_PATH}/python_{db.llm.get_(db.run.get_column_value(run_id=run_id, column='llm_id'), column='name')}{len(db.answer.get_all(run_id=run_id, only_correct=True))}_{run_id}_min{min_frequency}.png"
+        f"{SAVE_PICTURE_PATH}/python_{db.llm.get_column_value(db.run.get_column_value(run_id=run_id, column='llm_id'), column='name')}{len(db.answer.get_all(run_id=run_id, validation_filters=ValidationStatus.VALID))}_{run_id}_min{min_frequency}.png"
     )
     if Path(output_image_file).exists():
         print(f"The picture is already exists at: {output_image_file}")
