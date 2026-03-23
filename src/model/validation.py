@@ -32,7 +32,7 @@ class Validation:
         if not self.semantic.all_correct_words(words):
             return ValidationStatus.INVALID_WORD
 
-        return ValidationStatus.VALID
+        return ValidationStatus.TRUE
 
 
 class SyntacticValidation:
@@ -74,7 +74,7 @@ class SemanticValidation:
         """
         if not self.grapcache:
             try:
-                return nx.read_gml(GMPL_PATH)
+                return nx.read_gml(GMPL_PATH, label='name')
             except Exception as e:
                 print(f"Warning: Could not load graph from {GMPL_PATH}. Error: {e}")
                 return nx.Graph()
@@ -90,7 +90,6 @@ class SemanticValidation:
 
         if w1 not in G or w2 not in G:
             return [], 0
-            
         try:
             path = nx.shortest_path(G, source=w1, target=w2)
             return path, len(path)

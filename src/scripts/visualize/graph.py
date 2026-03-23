@@ -7,6 +7,7 @@ from typing import Set, Dict, Any
 from classes.db_manager import get_database
 from scripts.safe_operation import safe_operation
 from scripts.logger.logger import get_logger
+from scripts.load.load_helper import LoadHelper
 from pathlib import Path
 from scripts.basic_tools import (
     GMPL_PATH,
@@ -255,13 +256,13 @@ def visualize_word_graph(gml_nodes: Set, edge_frequencies: defaultdict, output_p
 
 def visualizer(run_id:int):
     """The main part of the visualizer component"""
-    from scripts.load.load_helper import get_minimal_frequences
     db = get_database()
     gml_filepath = GMPL_PATH 
-    min_frequency = get_minimal_frequences()
-
+    min_frequency = LoadHelper.get_minimal_frequences()
+    if not min_frequency:
+        return
     output_image_file = (
-        f"{SAVE_PICTURE_PATH}/python_{db.llm.get_(db.run.get_(run_id=run_id, column='llm_id'), column='name')}{len(db.answer.get_all(run_id=run_id, only_correct=True))}_{run_id}_min{min_frequency}.png"
+        f"{SAVE_PICTURE_PATH}/python_{db.llm.get_(db.run.get_column_value(run_id=run_id, column='llm_id'), column='name')}{len(db.answer.get_all(run_id=run_id, only_correct=True))}_{run_id}_min{min_frequency}.png"
     )
     if Path(output_image_file).exists():
         print(f"The picture is already exists at: {output_image_file}")
@@ -273,4 +274,3 @@ def visualizer(run_id:int):
         print(f"No edge frequencies were counted from {run_id}")
 
     visualize_word_graph(nodes_from_gml, frequencies, output_image_file, min_frequency)
-
